@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuestra Colección - Boutique</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --accent: #d4a373; --bg: #fdf6f0; --text: #4a4a4a; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+        header { background: white; padding: 40px 20px; text-align: center; border-bottom: 2px solid #f0e4d7; }
+        header h1 { margin: 0; color: var(--accent); font-size: 2.5em; letter-spacing: 2px; }
+        header p { margin-top: 10px; opacity: 0.8; }
+        
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+        
+        .product-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 20px rgba(212, 163, 115, 0.1); border: 1px solid #f0e4d7; transition: transform 0.3s; }
+        .product-card:hover { transform: translateY(-5px); }
+        .product-card img { width: 100%; height: 350px; object-fit: cover; background: #eee; }
+        
+        .info { padding: 20px; text-align: center; }
+        .info h3 { margin: 10px 0; font-size: 1.2em; text-transform: capitalize; }
+        .price { font-size: 22px; font-weight: bold; color: var(--accent); margin-bottom: 15px; }
+        
+        .btn-order { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn-order:hover { background: #bc8a5f; }
+
+        .cart-btn { position: fixed; bottom: 30px; right: 30px; background: #25d366; color: white; padding: 18px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; box-shadow: 0 10px 25px rgba(37, 211, 102, 0.3); display: none; z-index: 1000; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>BOUTIQUE</h1>
+    <p>Elegí tus prendas favoritas y encargalas por WhatsApp</p>
+</header>
+
+<div class="container" id="catalogo">
+    <p style="text-align:center; grid-column: 1/-1;">Descubriendo nuevas prendas para vos...</p>
+</div>
+
+<a href="#" class="cart-btn" id="btn-whatsapp" target="_blank">
+    🛒 Enviar Pedido (<span id="cart-count">0</span>)
+</a>
+
+<script>
+    const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhubml4cWVsbmt1eWZwbG5uY2NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg5OTk4MTYsImV4cCI6MjA1NDU3NTgxNn0.zjD9Q4lUlodn7XTrWF0W_A_LttLpWGaG-j4XGv_D-vE";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let carrito = [];
+    const WHATSAPP_NUMERO = "+5493775461122"; // CAMBIAR AQUÍ
+
+    async function cargarProductos() {
+        const { data: productos, error } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
+        if (error) return;
+        const contenedor = document.getElementById('catalogo');
+        contenedor.innerHTML = '';
+        productos.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <img src="${p.imagen_url || 'https://via.placeholder.com/300x400?text=Boutique+Blink'}" alt="${p.nombre}">
+                <div class="info">
+                    <h3>${p.nombre}</h3>
+                    <div class="price">${p.categoria}</div>
+                    <button class="btn-order" onclick="agregarAlCarrito('${p.nombre}', '${p.categoria}')">Encargar</button>
+                </div>
+            `;
+            contenedor.appendChild(card);
+        });
+    }
+
+    function agregarAlCarrito(nombre, precio) {
+        carrito.push({ nombre, precio });
+        const btn = document.getElementById('btn-whatsapp');
+        btn.style.display = 'block';
+        document.getElementById('cart-count').innerText = carrito.length;
+        
+        let texto = "¡Hola! Me encantaron estas prendas de la Boutique:\n\n";
+        carrito.forEach(item => texto += `• ${item.nombre} (${item.precio})\n`);
+        btn.href = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`;
+    }
+
+    cargarProductos();
+</script>
+</body>
+</html>
