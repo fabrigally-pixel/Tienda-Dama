@@ -17,33 +17,25 @@
         .price-box { background: #fdf6f0; padding: 15px; border-radius: 12px; text-align: center; margin-top: 15px; border: 1px dashed #d4a373; }
         .price-box span { font-size: 24px; font-weight: bold; color: #d4a373; display: block; }
         .btn-save { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        
-        /* Estilos de la Lista */
         .list-container { width: 100%; max-width: 500px; background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
         .item img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px; }
         .item-info { flex-grow: 1; }
         .item-info b { display: block; font-size: 14px; }
-        .item-info span { font-size: 12px; color: #888; }
         .actions { display: flex; gap: 5px; }
         .btn-del { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-
 <div class="card">
     <h2 id="form-title">Nueva Prenda</h2>
     <input type="hidden" id="edit-id">
-    
     <label>Nombre del Producto</label>
     <input type="text" id="nombre">
-
     <label>Link de la Imagen</label>
     <input type="text" id="img_url">
-
     <label>Precio Costo</label>
     <input type="number" id="costo" oninput="calcularVenta()">
-
     <label>Ganancia %</label>
     <div class="pct-buttons">
         <button class="btn-pct" onclick="setPct(25, this)">25%</button>
@@ -52,18 +44,14 @@
         <button class="btn-pct" onclick="setPct(100, this)">100%</button>
     </div>
     <input type="number" id="porcentaje" oninput="calcularVenta()">
-
     <div class="price-box"> Venta sugerida: <span id="precio_final">$0</span> </div>
-
     <button class="btn-save" id="btn-action" onclick="guardarProducto()">Publicar Producto</button>
     <button id="btn-cancel" style="display:none; width:100%; margin-top:10px; background:none; border:none; color:gray; cursor:pointer;" onclick="cancelarEdicion()">Cancelar Edición</button>
 </div>
-
 <div class="list-container">
     <h3>Stock Actual</h3>
     <div id="lista-productos">Cargando stock...</div>
 </div>
-
 <script>
     const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhubml4cWVsbmt1eWZwbG5uY2NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg5OTk4MTYsImV4cCI6MjA1NDU3NTgxNn0.zjD9Q4lUlodn7XTrWF0W_A_LttLpWGaG-j4XGv_D-vE"; 
@@ -88,42 +76,29 @@
         const nombre = document.getElementById('nombre').value;
         const costo = parseFloat(document.getElementById('costo').value);
         const img = document.getElementById('img_url').value;
-        const pct = parseFloat(document.getElementById('porcentaje').value);
-        
+        const pct = parseFloat(document.getElementById('porcentaje').value) || 0;
         if(!nombre || !costo) return alert("Completa nombre y costo");
         const totalVenta = "$" + Math.round(costo * (1 + (pct / 100))).toLocaleString('es-AR');
 
         let error;
-        if(id) { // EDITAR
+        if(id) {
             const res = await supabaseClient.from('productos').update({ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }).eq('id', id);
             error = res.error;
-        } else { // NUEVO
+        } else {
             const res = await supabaseClient.from('productos').insert([{ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }]);
             error = res.error;
         }
-
         if (error) alert("Error: " + error.message);
         else location.reload();
     }
 
     async function cargarLista() {
-        const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
         const div = document.getElementById('lista-productos');
+        if (error || !data) { div.innerHTML = 'No hay productos aún.'; return; }
         div.innerHTML = '';
         data.forEach(p => {
-            div.innerHTML += `
-                <div class="item">
-                    <img src="${p.imagen_url || 'https://via.placeholder.com/50'}" />
-                    <div class="item-info">
-                        <b>${p.nombre}</b>
-                        <span>Costo: $${p.precio_costo} | ${p.categoria}</span>
-                    </div>
-                    <div class="actions">
-                        <button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}')">✏️</button>
-                        <button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button>
-                    </div>
-                </div>
-            `;
+            div.innerHTML += `<div class="item"><img src="${p.imagen_url || 'https://via.placeholder.com/50'}" /><div class="item-info"><b>${p.nombre}</b><span>Costo: $${p.precio_costo} | ${p.categoria}</span></div><div class="actions"><button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}')">✏️</button><button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button></div></div>`;
         });
     }
 
@@ -144,9 +119,7 @@
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
     }
-
     function cancelarEdicion() { location.reload(); }
-
     cargarLista();
 </script>
 </body>
