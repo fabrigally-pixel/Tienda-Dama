@@ -80,22 +80,18 @@
         if(!nombre || !costo) return alert("Completa nombre y costo");
         const totalVenta = "$" + Math.round(costo * (1 + (pct / 100))).toLocaleString('es-AR');
 
-        let error;
         if(id) {
-            const res = await supabaseClient.from('productos').update({ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }).eq('id', id);
-            error = res.error;
+            await supabaseClient.from('productos').update({ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }).eq('id', id);
         } else {
-            const res = await supabaseClient.from('productos').insert([{ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }]);
-            error = res.error;
+            await supabaseClient.from('productos').insert([{ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }]);
         }
-        if (error) alert("Error: " + error.message);
-        else location.reload();
+        location.reload();
     }
 
     async function cargarLista() {
-        const { data, error } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
+        const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
         const div = document.getElementById('lista-productos');
-        if (error || !data) { div.innerHTML = 'No hay productos aún.'; return; }
+        if (!data || data.length === 0) { div.innerHTML = 'No hay productos aún.'; return; }
         div.innerHTML = '';
         data.forEach(p => {
             div.innerHTML += `<div class="item"><img src="${p.imagen_url || 'https://via.placeholder.com/50'}" /><div class="item-info"><b>${p.nombre}</b><span>Costo: $${p.precio_costo} | ${p.categoria}</span></div><div class="actions"><button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}')">✏️</button><button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button></div></div>`;
