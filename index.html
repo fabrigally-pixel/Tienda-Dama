@@ -10,12 +10,10 @@
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 100px; }
         header { background: white; padding: 20px; text-align: center; border-bottom: 2px solid #f0e4d7; }
         header h1 { margin: 0; color: var(--accent); letter-spacing: 4px; font-size: 2.2em; }
-        
         .category-bar { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: white; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #eee; scrollbar-width: none; }
         .category-bar::-webkit-scrollbar { display: none; }
         .cat-btn { padding: 8px 18px; background: #fff; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 20px; white-space: nowrap; cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 14px; }
         .cat-btn.active { background: var(--accent); color: white; }
-
         .container { max-width: 1200px; margin: 10px auto; padding: 0 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .product-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 15px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; display: flex; flex-direction: column; }
         .img-container { width: 100%; height: 350px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -27,29 +25,19 @@
         label { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; display: block; }
         select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; background: #fafafa; }
         .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; }
-        
         .cart-float { position: fixed; bottom: 20px; right: 20px; background: var(--green); color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; display: none; z-index: 100; font-weight: bold; border: none; }
         .modal { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; }
     </style>
 </head>
 <body>
-
 <header>
     <h1>SHOWROOM</h1>
     <p>Calidad y Estilo en cada prenda</p>
 </header>
-
 <div class="category-bar" id="category-bar"></div>
-
-<div class="container" id="catalogo">
-    <p style="text-align: center; grid-column: 1/-1;">Cargando catálogo...</p>
-</div>
-
-<button class="cart-float" id="cart-float" onclick="abrirModal()">
-    🛒 Ver Carrito (<span id="cart-count">0</span>)
-</button>
-
+<div class="container" id="catalogo"><p style="text-align: center; grid-column: 1/-1;">Cargando catálogo...</p></div>
+<button class="cart-float" id="cart-float" onclick="abrirModal()">🛒 Ver Carrito (<span id="cart-count">0</span>)</button>
 <div class="modal" id="modal-cliente">
     <div class="modal-content">
         <h2 style="color:var(--accent); margin-top:0">Tu Pedido</h2>
@@ -59,33 +47,28 @@
         <button onclick="cerrarModal()" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer; width:100%">Seguir mirando</button>
     </div>
 </div>
-
 <script>
-    const SUPABASE_URL = "https://hnnixqelbkuyplnncci.supabase.co";
+    const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const WHATSAPP_NUMERO = "5493775461122";
-    
     let productosAll = [];
     let carrito = [];
-    // ESTAS CATEGORÍAS DEBEN COINCIDIR EXACTAMENTE CON EL ADMIN
     const categoriasMenu = ["Todo", "Camisas", "Pantalones", "Remeras & Tops", "Sweaters & Buzos", "Blazers & Camperas", "Shorts & Polleras", "Monos & Vestidos", "Blusas"];
 
     async function cargarProductos() {
-        const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
+        // Quitamos el .order para evitar errores de columna created_at
+        const { data, error } = await supabaseClient.from('productos').select('*');
+        if (error) { console.error(error); return; }
         productosAll = data || [];
-        
         const bar = document.getElementById('category-bar');
         bar.innerHTML = categoriasMenu.map(c => `<button class="cat-btn ${c==='Todo'?'active':''}" onclick="filtrar('${c}', this)">${c}</button>`).join('');
-        
         renderizar(productosAll);
     }
 
     function filtrar(cat, el) {
         document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        
-        // Filtramos comparando con la columna 'marca' donde el admin guarda la categoría
         const filtered = (cat === 'Todo') ? productosAll : productosAll.filter(p => p.marca === cat);
         renderizar(filtered);
     }
@@ -100,19 +83,15 @@
             <div class="product-card">
                 <div class="img-container"><img src="${p.imagen_url}" class="main-img"></div>
                 <div class="info">
-                    <div class="price">${p.categoria}</div>
-                    <h3>${p.nombre}</h3>
+                    <div class="price">${p.categoria || '$0'}</div>
+                    <h3>${p.nombre || 'Sin nombre'}</h3>
                     <div class="selector-group">
                         <label>Talle:</label>
-                        <select id="talle-${p.id}">
-                            ${p.descripcion ? p.descripcion.split(',').map(t => `<option>${t.trim()}</option>`).join('') : '<option>Único</option>'}
-                        </select>
+                        <select id="talle-${p.id}">${p.descripcion ? p.descripcion.split(',').map(t => `<option>${t.trim()}</option>`).join('') : '<option>Único</option>'}</select>
                     </div>
                     <div class="selector-group">
                         <label>Color:</label>
-                        <select id="color-${p.id}">
-                            ${p.marca_detalle ? p.marca_detalle.split(',').map(c => `<option>${c.trim()}</option>`).join('') : '<option>Único</option>'}
-                        </select>
+                        <select id="color-${p.id}">${p.marca_detalle ? p.marca_detalle.split(',').map(c => `<option>${c.trim()}</option>`).join('') : '<option>Único</option>'}</select>
                     </div>
                     <button class="btn-add" onclick="agregarAlCarrito('${p.id}', '${p.nombre}', '${p.categoria}', ${p.precio_costo || 0}, '${p.imagen_url}')">Agregar al Carrito</button>
                 </div>
@@ -125,7 +104,7 @@
         carrito.push({ nombre, precioVenta, costo, talle, color, foto });
         document.getElementById('cart-float').style.display = 'block';
         document.getElementById('cart-count').innerText = carrito.length;
-        alert("¡Agregado al carrito!");
+        alert("¡Agregado!");
     }
 
     function abrirModal() {
@@ -138,31 +117,20 @@
 
     async function finalizarPedido() {
         const cliente = document.getElementById('nombre-cliente').value;
-        if (!cliente) return alert("Por favor, ingresá tu nombre");
-
+        if (!cliente) return alert("Ingresá tu nombre");
         let totalCosto = carrito.reduce((sum, i) => sum + i.costo, 0);
         let fotosString = carrito.map(i => i.foto).join(',');
-        let textoWhatsApp = `¡Hola! Soy *${cliente}*, quiero realizar este pedido:\n\n`;
-        
-        carrito.forEach((item, idx) => {
-            textoWhatsApp += `${idx+1}. ${item.nombre} (Talle: ${item.talle}, Color: ${item.color}) - ${item.precioVenta}\n`;
-        });
+        let textoWhatsApp = `¡Hola! Soy *${cliente}*, este es mi pedido:\n\n`;
+        carrito.forEach((item, idx) => { textoWhatsApp += `${idx+1}. ${item.nombre} (Talle: ${item.talle}, Color: ${item.color}) - ${item.precioVenta}\n`; });
 
         const { error } = await supabaseClient.from('pedidos').insert([{ 
-            cliente, 
-            detalles: textoWhatsApp, 
-            total: carrito.length + " prendas", 
-            estado: "NUEVO", 
-            total_costo: totalCosto, 
-            fotos_pedido: fotosString 
+            cliente, detalles: textoWhatsApp, total: carrito.length + " prendas", estado: "NUEVO", total_costo: totalCosto, fotos_pedido: fotosString 
         }]);
 
         if(!error) {
             window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(textoWhatsApp)}`, '_blank');
             location.reload();
-        } else {
-            alert("Error al procesar el pedido.");
-        }
+        } else { alert("Error al guardar el pedido en la base de datos."); }
     }
     cargarProductos();
 </script>
