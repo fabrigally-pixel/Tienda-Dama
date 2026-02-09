@@ -23,12 +23,11 @@
         .price-box span { font-size: 24px; font-weight: bold; color: #d4a373; display: block; }
         .btn-save { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         .list-container { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .item, .order-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
         .item img { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; margin-right: 12px; }
         .item-info { flex-grow: 1; }
         .item-info b { display: block; font-size: 14px; color: #333; }
-        .order-item { flex-direction: column; align-items: flex-start; gap: 8px; }
-        .order-badge { background: #d4a373; color: white; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; }
+        .order-item { display: flex; flex-direction: column; gap: 8px; border-bottom: 2px solid #f0e4d7; padding: 15px 0; }
         .actions button { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; margin-left: 4px; }
         .btn-del { background: #ff4d4d; color: white; }
     </style>
@@ -36,26 +35,33 @@
 <body>
 
 <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('carga')">📦 Productos</button>
-    <button class="tab-btn" onclick="switchTab('pedidos')">🛍️ Pedidos</button>
+    <button class="tab-btn active" id="btn-sec-carga" onclick="switchTab('carga')">📦 Productos</button>
+    <button class="tab-btn" id="btn-sec-pedidos" onclick="switchTab('pedidos')">🛍️ Pedidos</button>
 </div>
 
 <div id="sec-carga" class="section active">
     <div class="card">
         <h2 id="form-title">Nueva Prenda</h2>
         <input type="hidden" id="edit-id">
+        
         <label>Nombre del Producto</label>
         <input type="text" id="nombre" placeholder="Ej: Vestido Sol">
+        
         <label>Talles (separados por coma)</label>
         <input type="text" id="talles" placeholder="Ej: S, M, L, XL">
+        
         <label>Colores (separados por coma)</label>
         <input type="text" id="colores" placeholder="Ej: Negro, Blanco, Beige">
+        
         <label>Link Foto Principal</label>
         <input type="text" id="img_url" placeholder="https://...">
+        
         <label>Otras Fotos (links separados por coma)</label>
         <textarea id="fotos_extra" rows="2" placeholder="link1, link2, link3..."></textarea>
+        
         <label>Precio Costo</label>
         <input type="number" id="costo" oninput="calcularVenta()">
+        
         <label>Ganancia %</label>
         <div class="pct-buttons">
             <button class="btn-pct" onclick="setPct(25, this)">25%</button>
@@ -63,11 +69,14 @@
             <button class="btn-pct" onclick="setPct(70, this)">70%</button>
             <button class="btn-pct" onclick="setPct(100, this)">100%</button>
         </div>
-        <input type="number" id="porcentaje" oninput="calcularVenta()">
+        <input type="number" id="porcentaje" oninput="calcularVenta()" placeholder="Otro %">
+        
         <div class="price-box"> Venta sugerida: <span id="precio_final">$0</span> </div>
+        
         <button class="btn-save" id="btn-action" onclick="guardarProducto()">Publicar Producto</button>
         <button id="btn-cancel" style="display:none; width:100%; margin-top:10px; background:none; border:none; color:gray; cursor:pointer;" onclick="cancelarEdicion()">Cancelar Edición</button>
     </div>
+
     <div class="list-container">
         <h3>Stock Actual</h3>
         <div id="lista-productos">Cargando stock...</div>
@@ -77,7 +86,7 @@
 <div id="sec-pedidos" class="section">
     <div class="list-container">
         <h3>Encargues Recibidos</h3>
-        <div id="lista-pedidos">No hay pedidos registrados.</div>
+        <div id="lista-pedidos">Cargando pedidos...</div>
     </div>
 </div>
 
@@ -86,13 +95,17 @@
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa"; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Cambiar entre pestañas
     function switchTab(tab) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('sec-' + tab).classList.add('active');
+        document.getElementById('btn-sec-' + tab).classList.add('active');
         if(tab === 'pedidos') cargarPedidos();
+        if(tab === 'carga') cargarLista();
     }
 
+    // Lógica de Precios
     function setPct(valor, el) {
         document.querySelectorAll('.btn-pct').forEach(b => b.classList.remove('active'));
         if(el) el.classList.add('active');
@@ -107,6 +120,7 @@
         document.getElementById('precio_final').innerText = "$" + Math.round(total).toLocaleString('es-AR');
     }
 
+    // CRUD Productos
     async function guardarProducto() {
         const id = document.getElementById('edit-id').value;
         const nombre = document.getElementById('nombre').value;
@@ -120,34 +134,52 @@
         if(!nombre || !costo) return alert("Completa nombre y costo");
         const totalVenta = "$" + Math.round(costo * (1 + (pct / 100))).toLocaleString('es-AR');
 
-        const datos = { nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta, descripcion: talles, marca: colores, fotos: fots };
+        const datos = { 
+            nombre, 
+            precio_costo: costo, 
+            imagen_url: img, 
+            categoria: totalVenta, 
+            descripcion: talles, 
+            marca: colores, 
+            fotos: fots 
+        };
 
-        if(id) { await supabaseClient.from('productos').update(datos).eq('id', id); } 
-        else { await supabaseClient.from('productos').insert([datos]); }
+        if(id) { 
+            await supabaseClient.from('productos').update(datos).eq('id', id); 
+        } else { 
+            await supabaseClient.from('productos').insert([datos]); 
+        }
         location.reload();
     }
 
     async function cargarLista() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
         const div = document.getElementById('lista-productos');
+        div.innerHTML = '';
         if (!data || data.length === 0) { div.innerHTML = 'No hay productos.'; return; }
-        div.innerHTML = '';
+        
         data.forEach(p => {
-            div.innerHTML += `<div class="item"><img src="${p.imagen_url}" /><div class="item-info"><b>${p.nombre}</b><span>${p.categoria}</span></div><div class="actions"><button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}', '${p.descripcion}', '${p.marca}', '${p.fotos}')">✏️</button><button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button></div></div>`;
+            div.innerHTML += `
+                <div class="item">
+                    <img src="${p.imagen_url}" />
+                    <div class="item-info">
+                        <b>${p.nombre}</b>
+                        <span>${p.categoria}</span>
+                    </div>
+                    <div class="actions">
+                        <button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}', '${p.descripcion}', '${p.marca}', '${p.fotos}')">✏️</button>
+                        <button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button>
+                    </div>
+                </div>`;
         });
     }
 
-    async function cargarPedidos() {
-        const { data } = await supabaseClient.from('pedidos').select('*').order('created_at', { ascending: false });
-        const div = document.getElementById('lista-pedidos');
-        div.innerHTML = '';
-        if (!data || data.length === 0) { div.innerHTML = 'Sin pedidos.'; return; }
-        data.forEach(p => {
-            div.innerHTML += `<div class="order-item"><b>👤 ${p.cliente}</b><div style="font-size:12px; background:#f9f9f9; padding:8px; border-radius:8px; width:100%">${p.detalles.replace(/\n/g, '<br>')}</div><b>Total: ${p.total}</b><button onclick="borrarPedido('${p.id}')" style="font-size:10px; border:none; color:red; background:none; cursor:pointer">Eliminar Registro</button></div>`;
-        });
+    async function eliminarProducto(id) {
+        if(confirm("¿Seguro que querés borrar este producto?")) {
+            await supabaseClient.from('productos').delete().eq('id', id);
+            cargarLista();
+        }
     }
-
-    async function borrarPedido(id) { if(confirm("¿Borrar registro?")) { await supabaseClient.from('pedidos').delete().eq('id', id); cargarPedidos(); } }
 
     function prepararEdicion(id, nombre, costo, img, talles, colores, fotos) {
         document.getElementById('edit-id').value = id;
@@ -157,12 +189,48 @@
         document.getElementById('talles').value = talles;
         document.getElementById('colores').value = colores;
         document.getElementById('fotos_extra').value = fotos;
-        document.getElementById('form-title').innerText = "Editando";
-        document.getElementById('btn-action').innerText = "Guardar";
+        document.getElementById('form-title').innerText = "Editando Producto";
+        document.getElementById('btn-action').innerText = "Guardar Cambios";
+        document.getElementById('btn-action').style.background = "#007bff";
         document.getElementById('btn-cancel').style.display = "block";
+        window.scrollTo(0,0);
+        calcularVenta();
     }
 
     function cancelarEdicion() { location.reload(); }
+
+    // GESTIÓN DE PEDIDOS
+    async function cargarPedidos() {
+        const { data, error } = await supabaseClient.from('pedidos').select('*').order('created_at', { ascending: false });
+        const div = document.getElementById('lista-pedidos');
+        div.innerHTML = '';
+        
+        if (error) { div.innerHTML = "Error: " + error.message; return; }
+        if (!data || data.length === 0) { div.innerHTML = 'Sin pedidos aún.'; return; }
+
+        data.forEach(p => {
+            const fecha = new Date(p.created_at).toLocaleString('es-AR');
+            div.innerHTML += `
+                <div class="order-item">
+                    <b>👤 Cliente: ${p.cliente}</b>
+                    <small>📅 ${fecha}</small>
+                    <div style="font-size:12px; background:#f9f9f9; padding:10px; border-radius:8px; border-left: 4px solid #d4a373;">
+                        ${p.detalles.replace(/\n/g, '<br>')}
+                    </div>
+                    <b>Total: ${p.total}</b>
+                    <button onclick="borrarPedido('${p.id}')" style="color:red; background:none; border:none; cursor:pointer; text-align:left; padding:0; font-size:11px;">🗑️ Borrar de la lista</button>
+                </div>`;
+        });
+    }
+
+    async function borrarPedido(id) {
+        if(confirm("¿Borrar registro de pedido?")) {
+            await supabaseClient.from('pedidos').delete().eq('id', id);
+            cargarPedidos();
+        }
+    }
+
+    // Carga inicial
     cargarLista();
 </script>
 </body>
