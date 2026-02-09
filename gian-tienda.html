@@ -22,72 +22,32 @@
     </style>
 </head>
 <body>
-
 <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('carga', this)">📦 Stock</button>
     <button class="tab-btn" onclick="switchTab('pedidos', this)">🛍️ Pedidos</button>
     <button class="tab-btn" onclick="switchTab('historial', this)">📜 Historial</button>
 </div>
-
 <div id="sec-carga" class="section active">
     <div class="card">
         <h2 id="form-title" style="margin:0; color:#d4a373;">Gestionar Prenda</h2>
         <input type="hidden" id="edit-id">
-        
         <label>Categoría</label>
-        <select id="categoria-prenda">
-            <option>Camisas</option>
-            <option>Pantalones</option>
-            <option>Remeras & Tops</option>
-            <option>Sweaters & Buzos</option>
-            <option>Blazers & Camperas</option>
-            <option>Shorts & Polleras</option>
-            <option>Monos & Vestidos</option>
-            <option>Blusas</option>
-        </select>
-
-        <label>Nombre de la Prenda</label>
-        <input type="text" id="nombre" placeholder="Ej: Camisa Lino Blanca">
-        
-        <label>Talles (Separados por coma)</label>
-        <input type="text" id="talles" placeholder="S, M, L, XL">
-        
-        <label>Colores (Separados por coma)</label>
-        <input type="text" id="colores" placeholder="Blanco, Negro, Azul">
-        
-        <label>Foto Principal (Link de Imgur)</label>
-        <input type="text" id="img_url">
-        
-        <label>Fotos Extra (Links separados por coma)</label>
-        <textarea id="fotos_extra"></textarea>
-        
-        <label>Costo ($)</label>
-        <input type="number" id="costo" oninput="calcularVenta()" placeholder="0">
-        
-        <label>Ganancia %</label>
-        <input type="number" id="porcentaje" value="50" oninput="calcularVenta()">
-        
-        <div class="price-box">Precio de Venta: <b id="precio_final">$0</b></div>
-        
+        <select id="categoria-prenda"><option>Camisas</option><option>Pantalones</option><option>Remeras & Tops</option><option>Sweaters & Buzos</option><option>Blazers & Camperas</option><option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option></select>
+        <label>Nombre</label><input type="text" id="nombre">
+        <label>Talles</label><input type="text" id="talles">
+        <label>Colores</label><input type="text" id="colores">
+        <label>Foto Principal</label><input type="text" id="img_url">
+        <label>Fotos Extra</label><textarea id="fotos_extra"></textarea>
+        <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
+        <label>Ganancia %</label><input type="number" id="porcentaje" value="50" oninput="calcularVenta()">
+        <div class="price-box">Venta: <b id="precio_final">$0</b></div>
         <button id="btn-action" onclick="guardarProducto()" class="btn-main" style="background:#d4a373; color:white;">Publicar Producto</button>
-        <button id="btn-cancel" onclick="location.reload()" style="display:none; width:100%; background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancelar Edición</button>
+        <button id="btn-cancel" onclick="location.reload()" style="display:none; background:none; border:none; color:red; margin-top:10px; cursor:pointer; width:100%">Cancelar Edición</button>
     </div>
-
-    <div class="card">
-        <h3>Stock Actual</h3>
-        <div id="lista-productos">Cargando stock...</div>
-    </div>
+    <div class="card"><h3>Stock Actual</h3><div id="lista-productos">Cargando...</div></div>
 </div>
-
-<div id="sec-pedidos" class="section">
-    <button onclick="cerrarTodosLosPedidos()" style="width:100%; padding:15px; background:black; color:white; border-radius:10px; font-weight:bold; margin-bottom:15px; cursor:pointer;">🔒 CERRAR TODOS Y ARCHIVAR CICLO</button>
-    <div id="lista-pedidos">Cargando pedidos...</div>
-</div>
-
-<div id="sec-historial" class="section">
-    <div id="lista-historial"></div>
-</div>
-
+<div id="sec-pedidos" class="section"><div id="lista-pedidos">Cargando...</div></div>
+<div id="sec-historial" class="section"><div id="lista-historial"></div></div>
 <script>
     const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa";
@@ -108,48 +68,33 @@
         const p = parseFloat(document.getElementById('porcentaje').value) || 0;
         const total = Math.round(c * (1 + p/100));
         document.getElementById('precio_final').innerText = "$" + total.toLocaleString();
-        return total;
     }
 
     async function guardarProducto() {
         const id = document.getElementById('edit-id').value;
-        const precioVentaLabel = document.getElementById('precio_final').innerText;
-        
         const datos = {
             nombre: document.getElementById('nombre').value,
             precio_costo: parseFloat(document.getElementById('costo').value) || 0,
             imagen_url: document.getElementById('img_url').value,
-            categoria: precioVentaLabel, // Guardamos el precio formateado aquí para el catálogo
+            categoria: document.getElementById('precio_final').innerText,
             descripcion: document.getElementById('talles').value,
-            marca: document.getElementById('categoria-prenda').value, // AQUÍ GUARDAMOS LA CATEGORÍA PARA EL FILTRO
+            marca: document.getElementById('categoria-prenda').value,
             marca_detalle: document.getElementById('colores').value,
             fotos: document.getElementById('fotos_extra').value
         };
-
-        try {
-            if(id) {
-                await supabaseClient.from('productos').update(datos).eq('id', id);
-                alert("Actualizado con éxito");
-            } else {
-                await supabaseClient.from('productos').insert([datos]);
-                alert("Creado con éxito");
-            }
-            location.reload();
-        } catch (err) {
-            alert("Error al guardar. Revisá la conexión.");
-        }
+        const { error } = id ? await supabaseClient.from('productos').update(datos).eq('id', id) : await supabaseClient.from('productos').insert([datos]);
+        if(error) alert("Error: " + error.message); else location.reload();
     }
 
     async function cargarLista() {
-        const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
-        const contenedor = document.getElementById('lista-productos');
+        const { data } = await supabaseClient.from('productos').select('*');
         if(!data) return;
-        contenedor.innerHTML = data.map(p => `
+        document.getElementById('lista-productos').innerHTML = data.map(p => `
             <div class="prod-item">
-                <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
-                <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b><br><small>${p.marca || 'Sin Cat.'}</small></div>
+                <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover;">
+                <div style="flex-grow:1;"><b>${p.nombre}</b><br><small>${p.marca}</small></div>
                 <button onclick="prepararEdicion('${p.id}','${p.nombre}','${p.marca}','${p.descripcion}','${p.marca_detalle}','${p.imagen_url}','${p.fotos}',${p.precio_costo})">✏️</button>
-                <button onclick="eliminarProducto('${p.id}')" style="color:red; background:none; border:none; cursor:pointer;">🗑️</button>
+                <button onclick="eliminarProducto('${p.id}')">🗑️</button>
             </div>`).join('');
     }
 
@@ -162,53 +107,29 @@
         document.getElementById('img_url').value = img;
         document.getElementById('fotos_extra').value = fots;
         document.getElementById('costo').value = costo;
-        document.getElementById('form-title').innerText = "Editando Prenda";
-        document.getElementById('btn-action').innerText = "Guardar Cambios";
+        document.getElementById('form-title').innerText = "Editando...";
+        document.getElementById('btn-action').innerText = "Guardar";
         document.getElementById('btn-cancel').style.display = "block";
-        window.scrollTo(0,0);
         calcularVenta();
     }
 
-    async function eliminarProducto(id) {
-        if(confirm("¿Seguro que querés borrar esta prenda del stock?")) {
-            await supabaseClient.from('productos').delete().eq('id', id);
-            cargarLista();
-        }
-    }
+    async function eliminarProducto(id) { if(confirm("¿Borrar?")) { await supabaseClient.from('productos').delete().eq('id', id); cargarLista(); } }
 
     async function cargarPedidos(estado, contenedorId) {
-        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', estado).order('created_at', { ascending: false });
+        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', estado);
         const div = document.getElementById(contenedorId);
-        div.innerHTML = (data && data.length > 0) ? '' : '<p>No hay pedidos en esta sección.</p>';
-        if(data) {
-            data.forEach(p => {
-                const fotos = p.fotos_pedido ? p.fotos_pedido.split(',') : [];
-                div.innerHTML += `
-                    <div class="order-card">
-                        <b>👤 ${p.cliente}</b> <small>${new Date(p.created_at).toLocaleDateString()}</small>
-                        <div style="font-size:12px; margin-top:10px; background:#f9f9f9; padding:8px; border-radius:8px">${p.detalles.replace(/\n/g, '<br>')}</div>
-                        <div style="display:flex; gap:5px; margin-top:10px; overflow-x:auto;">
-                            ${fotos.map(f => `<img src="${f}" width="50" height="50" style="object-fit:cover; border-radius:5px;">`).join('')}
-                        </div>
-                        ${estado === 'NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px; border-radius:8px; background:#eee; border:1px solid #ddd;">✅ Archivar este pedido</button>` : ''}
-                    </div>`;
-            });
-        }
+        div.innerHTML = (data && data.length > 0) ? '' : '<p>Vacio</p>';
+        data?.forEach(p => {
+            div.innerHTML += `
+                <div class="order-card">
+                    <b>👤 ${p.cliente}</b>
+                    <div style="font-size:12px; margin-top:5px;">${p.detalles.replace(/\n/g, '<br>')}</div>
+                    ${estado === 'NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')">✅ Archivar</button>` : ''}
+                </div>`;
+        });
     }
 
-    async function cambiarEstado(id, nuevo) {
-        await supabaseClient.from('pedidos').update({ estado: nuevo }).eq('id', id);
-        switchTab('pedidos');
-    }
-
-    async function cerrarTodosLosPedidos() {
-        if(confirm("¿Estás seguro? Todos los pedidos 'NUEVOS' se enviarán al historial.")) {
-            await supabaseClient.from('pedidos').update({ estado: 'ARCHIVADO' }).eq('estado', 'NUEVO');
-            alert("¡Ciclo cerrado! La lista de pedidos está limpia.");
-            switchTab('pedidos');
-        }
-    }
-
+    async function cambiarEstado(id, nuevo) { await supabaseClient.from('pedidos').update({ estado: nuevo }).eq('id', id); switchTab('pedidos'); }
     cargarLista();
 </script>
 </body>
