@@ -11,8 +11,7 @@
         header { background: white; padding: 20px; text-align: center; border-bottom: 2px solid #f0e4d7; }
         header h1 { margin: 0; color: var(--accent); letter-spacing: 4px; font-size: 2.2em; }
         
-        /* Barra de Categorías */
-        .category-bar { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: white; sticky; top: 0; z-index: 50; border-bottom: 1px solid #eee; scrollbar-width: none; }
+        .category-bar { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: white; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #eee; scrollbar-width: none; }
         .category-bar::-webkit-scrollbar { display: none; }
         .cat-btn { padding: 8px 18px; background: #fff; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 20px; white-space: nowrap; cursor: pointer; font-weight: 600; transition: 0.3s; }
         .cat-btn.active { background: var(--accent); color: white; }
@@ -27,7 +26,7 @@
         .price { font-size: 22px; font-weight: bold; color: var(--accent); }
         h3 { margin: 5px 0 10px 0; font-size: 1.1em; text-transform: uppercase; color: #333; }
         .selector-group { margin-bottom: 10px; }
-        label { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; }
+        label { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; display: block; }
         select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; background: #fafafa; font-size: 14px; }
         .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 5px; }
         
@@ -48,9 +47,7 @@
     <p>Calidad y Estilo en cada prenda</p>
 </header>
 
-<div class="category-bar" id="category-bar">
-    <button class="cat-btn active" onclick="filtrar('Todas')">Todas</button>
-    </div>
+<div class="category-bar" id="category-bar"></div>
 
 <div class="container" id="catalogo">
     <p style="text-align: center; grid-column: 1/-1;">Cargando colección...</p>
@@ -71,7 +68,7 @@
         <hr>
         <label>Tu nombre completo:</label>
         <input type="text" id="nombre-cliente" placeholder="Nombre y Apellido" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin: 10px 0; box-sizing: border-box;">
-        <button onclick="finalizarPedido()" style="background:var(--green); color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:bold; cursor:pointer; font-size:16px">Enviar Pedido por WhatsApp</button>
+        <button onclick="finalizarPedido()" style="background:var(--green); color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:bold; cursor:pointer; font-size:16px">Enviar por WhatsApp</button>
         <button onclick="cerrarModal()" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer; width:100%">Seguir mirando</button>
     </div>
 </div>
@@ -84,30 +81,26 @@
     
     let productosAll = [];
     let carrito = [];
+    const categoriasMenu = ["Todo", "Camisas", "Pantalones", "Remeras & Tops", "Sweaters & Buzos", "Blazers & Camperas", "Shorts & Camperas", "Monos & Vestidos", "Blusas"];
 
     async function cargarProductos() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
         productosAll = data;
-        
-        // Crear botones de categorías dinámicamente
-        const categorias = ['Todas', ...new Set(data.map(p => p.marca).filter(m => m))];
         const bar = document.getElementById('category-bar');
-        bar.innerHTML = categorias.map(c => `<button class="cat-btn ${c==='Todas'?'active':''}" onclick="filtrar('${c}', this)">${c}</button>`).join('');
-        
+        bar.innerHTML = categoriasMenu.map(c => `<button class="cat-btn ${c==='Todo'?'active':''}" onclick="filtrar('${c}', this)">${c}</button>`).join('');
         renderizar(productosAll);
     }
 
     function filtrar(cat, el) {
-        if(el) {
-            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-        }
-        const filtered = cat === 'Todas' ? productosAll : productosAll.filter(p => p.marca === cat);
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        const filtered = (cat === 'Todo') ? productosAll : productosAll.filter(p => p.marca === cat);
         renderizar(filtered);
     }
 
     function renderizar(lista) {
         const contenedor = document.getElementById('catalogo');
+        if(lista.length === 0) { contenedor.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No hay prendas aquí todavía.</p>'; return; }
         contenedor.innerHTML = lista.map(p => {
             const fotos = [p.imagen_url, ...(p.fotos ? p.fotos.split(',') : [])].map(f => f.trim()).filter(f => f);
             return `
@@ -117,9 +110,9 @@
                     <div class="info">
                         <div class="price">${p.categoria}</div>
                         <h3>${p.nombre}</h3>
-                        <div class="selector-group"><label>Talle:</label><select id="talle-${p.id}">${p.descripcion.split(',').map(t => `<option>${t.trim()}</option>`).join('')}</select></div>
+                        <div class="selector-group"><label>Talle:</label><select id="talle-${p.id}">${p.descripcion ? p.descripcion.split(',').map(t => `<option>${t.trim()}</option>`).join('') : '<option>Único</option>'}</select></div>
                         <div class="selector-group"><label>Color:</label><select id="color-${p.id}">${p.marca_detalle ? p.marca_detalle.split(',').map(c => `<option>${c.trim()}</option>`).join('') : '<option>Único</option>'}</select></div>
-                        <button class="btn-add" onclick="agregarAlCarrito('${p.id}', '${p.nombre}', '${p.categoria}', ${p.precio_costo}, '${fotos[0]}')">Agregar</button>
+                        <button class="btn-add" onclick="agregarAlCarrito('${p.id}', '${p.nombre}', '${p.categoria}', ${p.precio_costo || 0}, '${fotos[0]}')">Agregar al Carrito</button>
                     </div>
                 </div>`;
         }).join('');
@@ -131,11 +124,10 @@
     function agregarAlCarrito(id, nombre, precioVenta, costo, foto) {
         const talle = document.getElementById(`talle-${id}`).value;
         const color = document.getElementById(`color-${id}`).value;
-        // Guardamos todo lo necesario para el admin
         carrito.push({ nombre, precioVenta, costo, talle, color, foto });
         document.getElementById('cart-float').style.display = 'block';
         document.getElementById('cart-count').innerText = carrito.length;
-        alert("¡Añadido!");
+        alert("¡Agregado!");
     }
 
     function abrirModal() {
@@ -148,29 +140,15 @@
 
     async function finalizarPedido() {
         const cliente = document.getElementById('nombre-cliente').value;
-        if (!cliente) return alert("Por favor, poné tu nombre");
-
+        if (!cliente) return alert("Poné tu nombre");
         let totalCosto = carrito.reduce((sum, i) => sum + i.costo, 0);
         let fotosString = carrito.map(i => i.foto).join(',');
-
         let textoWhatsApp = `¡Hola! Soy *${cliente}*, quiero este pedido:\n\n`;
-        carrito.forEach((item, idx) => {
-            textoWhatsApp += `${idx+1}. ${item.nombre} (Talle: ${item.talle}, Color: ${item.color}) - ${item.precioVenta}\n`;
-        });
-
-        const { error } = await supabaseClient.from('pedidos').insert([{
-            cliente: cliente,
-            detalles: textoWhatsApp,
-            total: carrito.length + " artículos",
-            estado: "NUEVO",
-            total_costo: totalCosto,
-            fotos_pedido: fotosString
-        }]);
-
+        carrito.forEach((item, idx) => { textoWhatsApp += `${idx+1}. ${item.nombre} (Talle: ${item.talle}, Color: ${item.color}) - ${item.precioVenta}\n`; });
+        await supabaseClient.from('pedidos').insert([{ cliente, detalles: textoWhatsApp, total: carrito.length + " prendas", estado: "NUEVO", total_costo: totalCosto, fotos_pedido: fotosString }]);
         window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(textoWhatsApp)}`, '_blank');
         location.reload();
     }
-
     cargarProductos();
 </script>
 </body>
