@@ -25,7 +25,8 @@
 
 <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('carga', this)">📦 Stock</button>
-    <button class="tab-btn" onclick="switchTab('pedidos', this)">🛍️ Pedidos</button>
+    <button class="tab-btn" onclick="switchTab('pedidos', this)">🛍️ Nuevos</button>
+    <button class="tab-btn" onclick="switchTab('historial', this)">📜 Archivo</button>
 </div>
 
 <div id="sec-carga" class="section active">
@@ -40,7 +41,8 @@
         <label>Nombre</label><input type="text" id="nombre">
         <label>Talles (Ej: S, M, L)</label><input type="text" id="talles">
         <label>Colores (Ej: Blanco, Negro)</label><input type="text" id="colores">
-        <label>Foto Principal (Link Imgur)</label><input type="text" id="img_url">
+        <label>Descripción / Tabla Talles (Texto)</label><textarea id="desc_texto" placeholder="Escribí aquí medidas o info extra..."></textarea>
+        <label>Foto Principal</label><input type="text" id="img_url">
         <label>Fotos Extra (Links separados por coma)</label><textarea id="fotos_extra"></textarea>
         <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
         <label>Ganancia %</label><input type="number" id="porcentaje" value="50" oninput="calcularVenta()">
@@ -51,9 +53,8 @@
     <div class="card"><h3>Stock Actual</h3><div id="lista-productos">Cargando...</div></div>
 </div>
 
-<div id="sec-pedidos" class="section">
-    <div id="lista-pedidos">Cargando...</div>
-</div>
+<div id="sec-pedidos" class="section"><div id="lista-pedidos">Cargando...</div></div>
+<div id="sec-historial" class="section"><div id="lista-historial">Cargando...</div></div>
 
 <script>
     const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
@@ -65,7 +66,8 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('sec-' + tab).classList.add('active');
         el.classList.add('active');
-        if(tab === 'pedidos') cargarPedidos();
+        if(tab === 'pedidos') cargarPedidos('NUEVO', 'lista-pedidos');
+        if(tab === 'historial') cargarPedidos('ARCHIVADO', 'lista-historial');
         if(tab === 'carga') cargarLista();
     }
 
@@ -78,6 +80,9 @@
 
     async function guardarProducto() {
         const id = document.getElementById('edit-id').value;
+        // Guardamos el texto de la tabla de talles y las fotos extra todo en la columna 'fotos' usando un separador |||
+        const fotosData = document.getElementById('desc_texto').value + "|||" + document.getElementById('fotos_extra').value;
+
         const datos = {
             nombre: document.getElementById('nombre').value,
             precio_costo: parseFloat(document.getElementById('costo').value) || 0,
@@ -85,7 +90,7 @@
             categoria: document.getElementById('precio_final').innerText,
             descripcion: document.getElementById('talles').value,
             marca_detalle: document.getElementById('colores').value,
-            fotos: document.getElementById('fotos_extra').value,
+            fotos: fotosData,
             marca: document.getElementById('categoria-prenda').value
         };
 
@@ -98,14 +103,15 @@
 
     async function cargarLista() {
         const { data } = await supabaseClient.from('productos').select('*');
-        const contenedor = document.getElementById('lista-productos');
-        contenedor.innerHTML = data.map(p => `
+        document.getElementById('lista-productos').innerHTML = data.map(p => {
+            return `
             <div class="prod-item">
                 <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
                 <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b><br><small>${p.marca}</small></div>
                 <button onclick="prepararEdicion('${p.id}','${p.nombre}','${p.marca}','${p.descripcion}','${p.marca_detalle}','${p.imagen_url}','${p.fotos}', ${p.precio_costo})">✏️</button>
                 <button onclick="eliminarProducto('${p.id}')">🗑️</button>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     function prepararEdicion(id, nom, cat, tal, col, img, fots, costo) {
@@ -115,7 +121,11 @@
         document.getElementById('talles').value = tal;
         document.getElementById('colores').value = col;
         document.getElementById('img_url').value = img;
-        document.getElementById('fotos_extra').value = fots || '';
+        
+        const partes = (fots || "").split("|||");
+        document.getElementById('desc_texto').value = partes[0] || '';
+        document.getElementById('fotos_extra').value = partes[1] || '';
+        
         document.getElementById('costo').value = costo;
         document.getElementById('form-title').innerText = "Editando...";
         document.getElementById('btn-action').innerText = "Actualizar";
@@ -125,29 +135,26 @@
     }
 
     async function eliminarProducto(id) {
-        if(confirm("¿Borrar producto?")) {
-            await supabaseClient.from('productos').delete().eq('id', id);
-            cargarLista();
-        }
+        if(confirm("¿Borrar?")) { await supabaseClient.from('productos').delete().eq('id', id); cargarLista(); }
     }
 
-    async function cargarPedidos() {
-        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', 'NUEVO');
-        const div = document.getElementById('lista-pedidos');
-        div.innerHTML = (data && data.length > 0) ? '' : '<p>No hay pedidos pendientes.</p>';
+    async function cargarPedidos(estado, contenedorId) {
+        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', estado);
+        const div = document.getElementById(contenedorId);
+        div.innerHTML = (data && data.length > 0) ? '' : '<p>Vacío</p>';
         data?.forEach(p => {
             div.innerHTML += `
                 <div class="order-card">
                     <b>👤 ${p.cliente}</b>
                     <div style="font-size:12px; margin-top:10px; background:#f9f9f9; padding:8px; border-radius:8px">${p.detalles.replace(/\n/g, '<br>')}</div>
-                    <button onclick="archivar('${p.id}')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px;">✅ Completado / Archivar</button>
+                    ${estado === 'NUEVO' ? `<button onclick="archivar('${p.id}')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px;">✅ Archivar</button>` : ''}
                 </div>`;
         });
     }
 
     async function archivar(id) {
         await supabaseClient.from('pedidos').update({ estado: 'ARCHIVADO' }).eq('id', id);
-        cargarPedidos();
+        switchTab('pedidos');
     }
 
     cargarLista();
