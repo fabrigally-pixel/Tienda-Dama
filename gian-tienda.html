@@ -3,59 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Tienda Dama</title>
+    <title>Admin Profesional - Tienda Dama</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #fdf6f0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 450px; border: 1px solid #f0e4d7; margin-bottom: 30px; }
-        h2 { color: #d4a373; text-align: center; margin-bottom: 20px; }
-        label { display: block; margin-top: 12px; font-weight: 600; color: #777; font-size: 12px; text-transform: uppercase; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #f0e4d7; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #fdf6f0; padding: 20px; display: flex; flex-direction: column; align-items: center; margin: 0; }
+        
+        /* Pestañas */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 450px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e0e0e0; font-weight: bold; color: #777; transition: 0.3s; }
+        .tab-btn.active { background: #d4a373; color: white; }
+
+        .section { display: none; width: 100%; max-width: 450px; }
+        .section.active { display: block; }
+
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; margin-bottom: 30px; box-sizing: border-box; }
+        h2, h3 { color: #d4a373; text-align: center; margin-top: 0; }
+        
+        label { display: block; margin-top: 12px; font-weight: 600; color: #777; font-size: 11px; text-transform: uppercase; }
+        input, textarea { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #f0e4d7; border-radius: 10px; box-sizing: border-box; font-size: 14px; font-family: inherit; }
+        .hint { font-size: 10px; color: #999; margin-top: -5px; }
+
         .pct-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
         .btn-pct { background: white; border: 1px solid #d4a373; color: #d4a373; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .btn-pct.active { background: #d4a373; color: white; }
+        
         .price-box { background: #fdf6f0; padding: 15px; border-radius: 12px; text-align: center; margin-top: 15px; border: 1px dashed #d4a373; }
         .price-box span { font-size: 24px; font-weight: bold; color: #d4a373; display: block; }
+        
         .btn-save { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        .list-container { width: 100%; max-width: 500px; background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .item img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px; }
+        
+        /* Lista de Stock y Pedidos */
+        .list-container { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .item, .order-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .item img { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; margin-right: 12px; }
         .item-info { flex-grow: 1; }
-        .item-info b { display: block; font-size: 14px; }
-        .actions { display: flex; gap: 5px; }
-        .btn-del { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .item-info b { display: block; font-size: 14px; color: #333; }
+        .item-info span { font-size: 12px; color: #777; }
+        
+        .order-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .order-badge { background: #d4a373; color: white; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; }
+        
+        .actions button { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; margin-left: 4px; }
+        .btn-del { background: #ff4d4d; color: white; }
     </style>
 </head>
 <body>
-<div class="card">
-    <h2 id="form-title">Nueva Prenda</h2>
-    <input type="hidden" id="edit-id">
-    <label>Nombre del Producto</label>
-    <input type="text" id="nombre">
-    <label>Link de la Imagen</label>
-    <input type="text" id="img_url">
-    <label>Precio Costo</label>
-    <input type="number" id="costo" oninput="calcularVenta()">
-    <label>Ganancia %</label>
-    <div class="pct-buttons">
-        <button class="btn-pct" onclick="setPct(25, this)">25%</button>
-        <button class="btn-pct" onclick="setPct(50, this)">50%</button>
-        <button class="btn-pct" onclick="setPct(70, this)">70%</button>
-        <button class="btn-pct" onclick="setPct(100, this)">100%</button>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('carga')">📦 Productos</button>
+    <button class="tab-btn" onclick="switchTab('pedidos')">🛍️ Pedidos</button>
+</div>
+
+<div id="sec-carga" class="section active">
+    <div class="card">
+        <h2 id="form-title">Nueva Prenda</h2>
+        <input type="hidden" id="edit-id">
+        
+        <label>Nombre del Producto</label>
+        <input type="text" id="nombre" placeholder="Ej: Vestido Sol">
+
+        <label>Talles (separados por coma)</label>
+        <input type="text" id="talles" placeholder="Ej: S, M, L, XL">
+
+        <label>Colores (separados por coma)</label>
+        <input type="text" id="colores" placeholder="Ej: Negro, Blanco, Beige">
+
+        <label>Link Foto Principal</label>
+        <input type="text" id="img_url" placeholder="https://...">
+
+        <label>Otras Fotos (links separados por coma)</label>
+        <textarea id="fotos_extra" rows="2" placeholder="link1, link2, link3..."></textarea>
+
+        <label>Precio Costo</label>
+        <input type="number" id="costo" oninput="calcularVenta()">
+
+        <label>Ganancia %</label>
+        <div class="pct-buttons">
+            <button class="btn-pct" onclick="setPct(25, this)">25%</button>
+            <button class="btn-pct" onclick="setPct(50, this)">50%</button>
+            <button class="btn-pct" onclick="setPct(70, this)">70%</button>
+            <button class="btn-pct" onclick="setPct(100, this)">100%</button>
+        </div>
+        <input type="number" id="porcentaje" oninput="calcularVenta()">
+
+        <div class="price-box"> Venta sugerida: <span id="precio_final">$0</span> </div>
+
+        <button class="btn-save" id="btn-action" onclick="guardarProducto()">Publicar Producto</button>
+        <button id="btn-cancel" style="display:none; width:100%; margin-top:10px; background:none; border:none; color:gray; cursor:pointer;" onclick="cancelarEdicion()">Cancelar Edición</button>
     </div>
-    <input type="number" id="porcentaje" oninput="calcularVenta()">
-    <div class="price-box"> Venta sugerida: <span id="precio_final">$0</span> </div>
-    <button class="btn-save" id="btn-action" onclick="guardarProducto()">Publicar Producto</button>
-    <button id="btn-cancel" style="display:none; width:100%; margin-top:10px; background:none; border:none; color:gray; cursor:pointer;" onclick="cancelarEdicion()">Cancelar Edición</button>
+
+    <div class="list-container">
+        <h3>Stock Actual</h3>
+        <div id="lista-productos">Cargando stock...</div>
+    </div>
 </div>
-<div class="list-container">
-    <h3>Stock Actual</h3>
-    <div id="lista-productos">Cargando stock...</div>
+
+<div id="sec-pedidos" class="section">
+    <div class="list-container">
+        <h3>Encargues Recibidos</h3>
+        <div id="lista-pedidos">No hay pedidos registrados.</div>
+    </div>
 </div>
+
 <script>
     const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa"; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function switchTab(tab) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('sec-' + tab).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if(tab === 'pedidos') cargarPedidos();
+    }
 
     function setPct(valor, el) {
         document.querySelectorAll('.btn-pct').forEach(b => b.classList.remove('active'));
@@ -74,16 +135,30 @@
     async function guardarProducto() {
         const id = document.getElementById('edit-id').value;
         const nombre = document.getElementById('nombre').value;
-        const costo = parseFloat(document.getElementById('costo').value);
+        const talles = document.getElementById('talles').value;
+        const colores = document.getElementById('colores').value;
         const img = document.getElementById('img_url').value;
+        const fots = document.getElementById('fotos_extra').value;
+        const costo = parseFloat(document.getElementById('costo').value);
         const pct = parseFloat(document.getElementById('porcentaje').value) || 0;
+
         if(!nombre || !costo) return alert("Completa nombre y costo");
         const totalVenta = "$" + Math.round(costo * (1 + (pct / 100))).toLocaleString('es-AR');
 
+        const datos = { 
+            nombre, 
+            precio_costo: costo, 
+            imagen_url: img, 
+            categoria: totalVenta,
+            descripcion: talles,
+            marca: colores,
+            fotos: fots
+        };
+
         if(id) {
-            await supabaseClient.from('productos').update({ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }).eq('id', id);
+            await supabaseClient.from('productos').update(datos).eq('id', id);
         } else {
-            await supabaseClient.from('productos').insert([{ nombre, precio_costo: costo, imagen_url: img, categoria: totalVenta }]);
+            await supabaseClient.from('productos').insert([datos]);
         }
         location.reload();
     }
@@ -91,10 +166,41 @@
     async function cargarLista() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
         const div = document.getElementById('lista-productos');
-        if (!data || data.length === 0) { div.innerHTML = 'No hay productos aún.'; return; }
+        if (!data || data.length === 0) { div.innerHTML = 'No hay productos.'; return; }
         div.innerHTML = '';
         data.forEach(p => {
-            div.innerHTML += `<div class="item"><img src="${p.imagen_url || 'https://via.placeholder.com/50'}" /><div class="item-info"><b>${p.nombre}</b><span>Costo: $${p.precio_costo} | ${p.categoria}</span></div><div class="actions"><button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}')">✏️</button><button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button></div></div>`;
+            div.innerHTML += `
+                <div class="item">
+                    <img src="${p.imagen_url || 'https://via.placeholder.com/50'}" />
+                    <div class="item-info">
+                        <b>${p.nombre}</b>
+                        <span>${p.categoria} | Talles: ${p.descripcion || '-'}</span>
+                    </div>
+                    <div class="actions">
+                        <button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}', '${p.descripcion}', '${p.marca}', '${p.fotos}')">✏️</button>
+                        <button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function cargarPedidos() {
+        const { data } = await supabaseClient.from('pedidos').select('*').order('created_at', { ascending: false });
+        const div = document.getElementById('lista-pedidos');
+        if (!data || data.length === 0) { div.innerHTML = 'No hay pedidos aún.'; return; }
+        div.innerHTML = '';
+        data.forEach(p => {
+            div.innerHTML += `
+                <div class="order-item">
+                    <div style="width:100%; display:flex; justify-content:space-between">
+                        <b style="color:#d4a373">👤 ${p.cliente}</b>
+                        <span class="order-badge">NUEVO</span>
+                    </div>
+                    <div style="font-size:13px; color:#555; background:#f9f9f9; padding:8px; border-radius:8px; width:100%; box-sizing:border-box">
+                        ${p.detalles.replace(/\n/g, '<br>')}
+                    </div>
+                    <b style="align-self: flex-end">Total: ${p.total}</b>
+                </div>`;
         });
     }
 
@@ -105,19 +211,22 @@
         }
     }
 
-    function prepararEdicion(id, nombre, costo, img) {
+    function prepararEdicion(id, nombre, costo, img, talles, colores, fotos) {
         document.getElementById('edit-id').value = id;
         document.getElementById('nombre').value = nombre;
         document.getElementById('costo').value = costo;
         document.getElementById('img_url').value = img;
+        document.getElementById('talles').value = talles !== 'null' ? talles : '';
+        document.getElementById('colores').value = colores !== 'null' ? colores : '';
+        document.getElementById('fotos_extra').value = fotos !== 'null' ? fotos : '';
         document.getElementById('form-title').innerText = "Editando Prenda";
         document.getElementById('btn-action').innerText = "Guardar Cambios";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
     }
+
     function cancelarEdicion() { location.reload(); }
     cargarLista();
 </script>
 </body>
 </html>
-
