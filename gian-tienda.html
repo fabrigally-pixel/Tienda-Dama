@@ -16,9 +16,9 @@
         label { display: block; margin-top: 10px; font-weight: 600; color: #777; font-size: 11px; text-transform: uppercase; }
         input, select, textarea { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #f0e4d7; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
         .price-box { background: #fdf6f0; padding: 15px; border-radius: 12px; text-align: center; margin: 10px 0; border: 1px dashed #d4a373; }
-        .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .btn-main { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .prod-item { display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee; padding:10px 0; }
+        .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -26,7 +26,6 @@
 <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('carga', this)">📦 Stock</button>
     <button class="tab-btn" onclick="switchTab('pedidos', this)">🛍️ Pedidos</button>
-    <button class="tab-btn" onclick="switchTab('historial', this)">📜 Historial</button>
 </div>
 
 <div id="sec-carga" class="section active">
@@ -39,8 +38,10 @@
             <option>Blazers & Camperas</option><option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option>
         </select>
         <label>Nombre</label><input type="text" id="nombre">
-        <label>Talles y Colores</label><input type="text" id="talles" placeholder="S, M, Blanco, Negro...">
-        <label>Link Foto (Imgur)</label><input type="text" id="img_url">
+        <label>Talles (Ej: S, M, L)</label><input type="text" id="talles">
+        <label>Colores (Ej: Blanco, Negro)</label><input type="text" id="colores">
+        <label>Foto Principal (Link Imgur)</label><input type="text" id="img_url">
+        <label>Fotos Extra (Links separados por coma)</label><textarea id="fotos_extra"></textarea>
         <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
         <label>Ganancia %</label><input type="number" id="porcentaje" value="50" oninput="calcularVenta()">
         <div class="price-box">Precio Venta: <b id="precio_final">$0</b></div>
@@ -51,11 +52,8 @@
 </div>
 
 <div id="sec-pedidos" class="section">
-    <button onclick="cerrarTodosLosPedidos()" style="width:100%; padding:15px; background:black; color:white; border-radius:10px; margin-bottom:15px; cursor:pointer;">🔒 ARCHIVAR TODOS</button>
     <div id="lista-pedidos">Cargando...</div>
 </div>
-
-<div id="sec-historial" class="section"><div id="lista-historial"></div></div>
 
 <script>
     const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
@@ -66,9 +64,8 @@
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('sec-' + tab).classList.add('active');
-        if(el) el.classList.add('active');
-        if(tab === 'pedidos') cargarPedidos('NUEVO', 'lista-pedidos');
-        if(tab === 'historial') cargarPedidos('ARCHIVADO', 'lista-historial');
+        el.classList.add('active');
+        if(tab === 'pedidos') cargarPedidos();
         if(tab === 'carga') cargarLista();
     }
 
@@ -87,11 +84,15 @@
             imagen_url: document.getElementById('img_url').value,
             categoria: document.getElementById('precio_final').innerText,
             descripcion: document.getElementById('talles').value,
+            marca_detalle: document.getElementById('colores').value,
+            fotos: document.getElementById('fotos_extra').value,
             marca: document.getElementById('categoria-prenda').value
-            // NOTA: Eliminamos marca_detalle y fotos porque no existen en tu DB
         };
 
-        const { error } = id ? await supabaseClient.from('productos').update(datos).eq('id', id) : await supabaseClient.from('productos').insert([datos]);
+        const { error } = id 
+            ? await supabaseClient.from('productos').update(datos).eq('id', id) 
+            : await supabaseClient.from('productos').insert([datos]);
+
         if(error) alert("Error: " + error.message); else location.reload();
     }
 
@@ -102,20 +103,22 @@
             <div class="prod-item">
                 <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
                 <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b><br><small>${p.marca}</small></div>
-                <button onclick="prepararEdicion('${p.id}','${p.nombre}','${p.marca}','${p.descripcion}', '${p.imagen_url}', ${p.precio_costo})">✏️</button>
+                <button onclick="prepararEdicion('${p.id}','${p.nombre}','${p.marca}','${p.descripcion}','${p.marca_detalle}','${p.imagen_url}','${p.fotos}', ${p.precio_costo})">✏️</button>
                 <button onclick="eliminarProducto('${p.id}')">🗑️</button>
             </div>`).join('');
     }
 
-    function prepararEdicion(id, nom, cat, tal, img, costo) {
+    function prepararEdicion(id, nom, cat, tal, col, img, fots, costo) {
         document.getElementById('edit-id').value = id;
         document.getElementById('nombre').value = nom;
         document.getElementById('categoria-prenda').value = cat;
         document.getElementById('talles').value = tal;
+        document.getElementById('colores').value = col;
         document.getElementById('img_url').value = img;
+        document.getElementById('fotos_extra').value = fots || '';
         document.getElementById('costo').value = costo;
         document.getElementById('form-title').innerText = "Editando...";
-        document.getElementById('btn-action').innerText = "Guardar";
+        document.getElementById('btn-action').innerText = "Actualizar";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
         calcularVenta();
@@ -128,30 +131,23 @@
         }
     }
 
-    async function cargarPedidos(estado, contenedorId) {
-        const { data, error } = await supabaseClient.from('pedidos').select('*').eq('estado', estado);
-        const div = document.getElementById(contenedorId);
-        div.innerHTML = (data && data.length > 0) ? '' : '<p>No hay pedidos.</p>';
+    async function cargarPedidos() {
+        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', 'NUEVO');
+        const div = document.getElementById('lista-pedidos');
+        div.innerHTML = (data && data.length > 0) ? '' : '<p>No hay pedidos pendientes.</p>';
         data?.forEach(p => {
             div.innerHTML += `
                 <div class="order-card">
                     <b>👤 ${p.cliente}</b>
                     <div style="font-size:12px; margin-top:10px; background:#f9f9f9; padding:8px; border-radius:8px">${p.detalles.replace(/\n/g, '<br>')}</div>
-                    ${estado === 'NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px;">✅ Archivar</button>` : ''}
+                    <button onclick="archivar('${p.id}')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px;">✅ Completado / Archivar</button>
                 </div>`;
         });
     }
 
-    async function cambiarEstado(id, nuevo) {
-        await supabaseClient.from('pedidos').update({ estado: nuevo }).eq('id', id);
-        switchTab('pedidos');
-    }
-
-    async function cerrarTodosLosPedidos() {
-        if(confirm("¿Archivar todo?")) {
-            await supabaseClient.from('pedidos').update({ estado: 'ARCHIVADO' }).eq('estado', 'NUEVO');
-            switchTab('pedidos');
-        }
+    async function archivar(id) {
+        await supabaseClient.from('pedidos').update({ estado: 'ARCHIVADO' }).eq('id', id);
+        cargarPedidos();
     }
 
     cargarLista();
