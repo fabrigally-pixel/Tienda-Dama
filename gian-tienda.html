@@ -6,232 +6,167 @@
     <title>Admin - SHOWROOM</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #fdf6f0; padding: 20px; display: flex; flex-direction: column; align-items: center; margin: 0; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 450px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e0e0e0; font-weight: bold; color: #777; transition: 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background: #fdf6f0; padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; width: 100%; max-width: 500px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e0e0e0; font-weight: bold; font-size: 12px; }
         .tab-btn.active { background: #d4a373; color: white; }
-        .section { display: none; width: 100%; max-width: 450px; }
+        .section { display: none; width: 100%; max-width: 500px; }
         .section.active { display: block; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; margin-bottom: 30px; box-sizing: border-box; }
-        h2, h3 { color: #d4a373; text-align: center; margin-top: 0; }
-        label { display: block; margin-top: 12px; font-weight: 600; color: #777; font-size: 11px; text-transform: uppercase; }
-        input, textarea { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #f0e4d7; border-radius: 10px; box-sizing: border-box; font-size: 14px; font-family: inherit; }
-        .pct-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
-        .btn-pct { background: white; border: 1px solid #d4a373; color: #d4a373; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
-        .btn-pct.active { background: #d4a373; color: white; }
-        .price-box { background: #fdf6f0; padding: 15px; border-radius: 12px; text-align: center; margin-top: 15px; border: 1px dashed #d4a373; }
-        .price-box span { font-size: 24px; font-weight: bold; color: #d4a373; display: block; }
-        .btn-save { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        .list-container { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .item img { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; margin-right: 12px; }
-        .item-info { flex-grow: 1; }
-        .item-info b { display: block; font-size: 14px; color: #333; }
-        .order-item { display: flex; flex-direction: column; gap: 8px; border-bottom: 2px solid #f0e4d7; padding: 15px 0; }
-        .actions button { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; margin-left: 4px; }
-        .btn-del { background: #ff4d4d; color: white; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; margin-bottom: 20px; }
+        label { display: block; margin-top: 10px; font-weight: 600; color: #777; font-size: 11px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #f0e4d7; border-radius: 10px; box-sizing: border-box; }
+        .price-box { background: #fdf6f0; padding: 15px; border-radius: 12px; text-align: center; margin-top: 10px; border: 1px dashed #d4a373; }
+        .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .order-photos { display: flex; gap: 5px; margin: 10px 0; overflow-x: auto; }
+        .order-photos img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; }
+        .finance-badge { background: #f0e4d7; padding: 8px; border-radius: 8px; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+        .btn-close { background: #28a745; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
+        .btn-download { background: #007bff; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="tabs">
-    <button class="tab-btn active" id="btn-sec-carga" onclick="switchTab('carga')">📦 Productos</button>
-    <button class="tab-btn" id="btn-sec-pedidos" onclick="switchTab('pedidos')">🛍️ Pedidos</button>
+    <button class="tab-btn active" onclick="switchTab('carga')">📦 Cargar</button>
+    <button class="tab-btn" onclick="switchTab('pedidos')">🛍️ Pendientes</button>
+    <button class="tab-btn" onclick="switchTab('historial')">📜 Historial</button>
 </div>
 
 <div id="sec-carga" class="section active">
     <div class="card">
-        <h2 id="form-title">Nueva Prenda</h2>
+        <h2 id="form-title" style="color:#d4a373; margin:0">Nueva Prenda</h2>
         <input type="hidden" id="edit-id">
         
+        <label>Categoría</label>
+        <select id="categoria-prenda">
+            <option>Camisas</option>
+            <option>Pantalones</option>
+            <option>Remeras & Tops</option>
+            <option>Sweaters & Buzos</option>
+            <option>Blazers & Camperas</option>
+            <option>Shorts & Camperas</option>
+            <option>Monos & Vestidos</option>
+            <option>Blusas</option>
+        </select>
+
         <label>Nombre del Producto</label>
-        <input type="text" id="nombre" placeholder="Ej: Vestido Sol">
+        <input type="text" id="nombre" placeholder="Ej: Jean Wide Leg">
         
-        <label>Talles (separados por coma)</label>
-        <input type="text" id="talles" placeholder="Ej: S, M, L, XL">
+        <label>Talles (S, M, L...)</label>
+        <input type="text" id="talles" placeholder="Ej: 36, 38, 40">
         
         <label>Colores (separados por coma)</label>
-        <input type="text" id="colores" placeholder="Ej: Negro, Blanco, Beige">
-        
+        <input type="text" id="colores_detalle" placeholder="Azul, Negro, Celeste">
+
         <label>Link Foto Principal</label>
-        <input type="text" id="img_url" placeholder="https://...">
+        <input type="text" id="img_url">
         
-        <label>Otras Fotos (links separados por coma)</label>
-        <textarea id="fotos_extra" rows="2" placeholder="link1, link2, link3..."></textarea>
+        <label>Fotos Extra (links separados por coma)</label>
+        <textarea id="fotos_extra" rows="2"></textarea>
         
-        <label>Precio Costo</label>
+        <label>Precio Costo ($)</label>
         <input type="number" id="costo" oninput="calcularVenta()">
         
         <label>Ganancia %</label>
-        <div class="pct-buttons">
-            <button class="btn-pct" onclick="setPct(25, this)">25%</button>
-            <button class="btn-pct" onclick="setPct(50, this)">50%</button>
-            <button class="btn-pct" onclick="setPct(70, this)">70%</button>
-            <button class="btn-pct" onclick="setPct(100, this)">100%</button>
-        </div>
-        <input type="number" id="porcentaje" oninput="calcularVenta()" placeholder="Otro %">
+        <input type="number" id="porcentaje" value="50" oninput="calcularVenta()">
         
-        <div class="price-box"> Venta sugerida: <span id="precio_final">$0</span> </div>
+        <div class="price-box">Venta Sugerida: <b id="precio_final">$0</b></div>
         
-        <button class="btn-save" id="btn-action" onclick="guardarProducto()">Publicar Producto</button>
-        <button id="btn-cancel" style="display:none; width:100%; margin-top:10px; background:none; border:none; color:gray; cursor:pointer;" onclick="cancelarEdicion()">Cancelar Edición</button>
-    </div>
-
-    <div class="list-container">
-        <h3>Stock Actual</h3>
-        <div id="lista-productos">Cargando stock...</div>
+        <button onclick="guardarProducto()" class="btn-close" style="background:#d4a373">Publicar Producto</button>
     </div>
 </div>
 
 <div id="sec-pedidos" class="section">
-    <div class="list-container">
-        <h3>Encargues Recibidos</h3>
-        <div id="lista-pedidos">Cargando pedidos...</div>
-    </div>
+    <div id="lista-pedidos">Cargando...</div>
+</div>
+
+<div id="sec-historial" class="section">
+    <div id="lista-historial">Cargando...</div>
 </div>
 
 <script>
     const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa"; 
+    const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Cambiar entre pestañas
     function switchTab(tab) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('sec-' + tab).classList.add('active');
-        document.getElementById('btn-sec-' + tab).classList.add('active');
-        if(tab === 'pedidos') cargarPedidos();
-        if(tab === 'carga') cargarLista();
-    }
-
-    // Lógica de Precios
-    function setPct(valor, el) {
-        document.querySelectorAll('.btn-pct').forEach(b => b.classList.remove('active'));
-        if(el) el.classList.add('active');
-        document.getElementById('porcentaje').value = valor;
-        calcularVenta();
+        event.target.classList.add('active');
+        if(tab === 'pedidos') cargarPedidos('NUEVO', 'lista-pedidos');
+        if(tab === 'historial') cargarPedidos('ARCHIVADO', 'lista-historial');
     }
 
     function calcularVenta() {
-        const costo = parseFloat(document.getElementById('costo').value) || 0;
-        const pct = parseFloat(document.getElementById('porcentaje').value) || 0;
-        const total = costo * (1 + (pct / 100));
-        document.getElementById('precio_final').innerText = "$" + Math.round(total).toLocaleString('es-AR');
+        const c = parseFloat(document.getElementById('costo').value) || 0;
+        const p = parseFloat(document.getElementById('porcentaje').value) || 0;
+        document.getElementById('precio_final').innerText = "$" + Math.round(c * (1 + p/100)).toLocaleString();
     }
 
-    // CRUD Productos
     async function guardarProducto() {
-        const id = document.getElementById('edit-id').value;
-        const nombre = document.getElementById('nombre').value;
-        const talles = document.getElementById('talles').value;
-        const colores = document.getElementById('colores').value;
-        const img = document.getElementById('img_url').value;
-        const fots = document.getElementById('fotos_extra').value;
-        const costo = parseFloat(document.getElementById('costo').value);
-        const pct = parseFloat(document.getElementById('porcentaje').value) || 0;
-
-        if(!nombre || !costo) return alert("Completa nombre y costo");
-        const totalVenta = "$" + Math.round(costo * (1 + (pct / 100))).toLocaleString('es-AR');
-
-        const datos = { 
-            nombre, 
-            precio_costo: costo, 
-            imagen_url: img, 
-            categoria: totalVenta, 
-            descripcion: talles, 
-            marca: colores, 
-            fotos: fots 
+        const datos = {
+            nombre: document.getElementById('nombre').value,
+            precio_costo: parseFloat(document.getElementById('costo').value),
+            imagen_url: document.getElementById('img_url').value,
+            categoria: document.getElementById('precio_final').innerText,
+            descripcion: document.getElementById('talles').value, // Talles
+            marca: document.getElementById('categoria-prenda').value, // Categoría Filtro
+            marca_detalle: document.getElementById('colores_detalle').value, // Colores
+            fotos: document.getElementById('fotos_extra').value
         };
-
-        if(id) { 
-            await supabaseClient.from('productos').update(datos).eq('id', id); 
-        } else { 
-            await supabaseClient.from('productos').insert([datos]); 
-        }
-        location.reload();
+        await supabaseClient.from('productos').insert([datos]);
+        alert("¡Publicado!"); location.reload();
     }
 
-    async function cargarLista() {
-        const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
-        const div = document.getElementById('lista-productos');
-        div.innerHTML = '';
-        if (!data || data.length === 0) { div.innerHTML = 'No hay productos.'; return; }
-        
+    async function cargarPedidos(estado, contenedorId) {
+        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', estado).order('created_at', { ascending: false });
+        const div = document.getElementById(contenedorId);
+        div.innerHTML = data.length === 0 ? '<p>No hay registros.</p>' : '';
+
         data.forEach(p => {
+            const fotos = p.fotos_pedido ? p.fotos_pedido.split(',') : [];
             div.innerHTML += `
-                <div class="item">
-                    <img src="${p.imagen_url}" />
-                    <div class="item-info">
-                        <b>${p.nombre}</b>
-                        <span>${p.categoria}</span>
+                <div class="order-card">
+                    <b>👤 ${p.cliente}</b> <small>${new Date(p.created_at).toLocaleDateString()}</small>
+                    <div class="order-photos">${fotos.map(f => `<img src="${f}">`).join('')}</div>
+                    <div style="font-size:12px; background:#f9f9f9; padding:8px; border-radius:8px">${p.detalles.replace(/\n/g, '<br>')}</div>
+                    
+                    <div class="finance-badge">
+                        <span>Costo: <b>$${p.total_costo.toLocaleString()}</b></span>
+                        <span>Items: <b>${p.total}</b></span>
                     </div>
-                    <div class="actions">
-                        <button onclick="prepararEdicion('${p.id}', '${p.nombre}', ${p.precio_costo}, '${p.imagen_url}', '${p.descripcion}', '${p.marca}', '${p.fotos}')">✏️</button>
-                        <button class="btn-del" onclick="eliminarProducto('${p.id}')">🗑️</button>
-                    </div>
+
+                    ${estado === 'NUEVO' ? `
+                        <button class="btn-close" onclick="cambiarEstado('${p.id}', 'ARCHIVADO')">✅ Cerrar y Archivar</button>
+                        <button class="btn-download" onclick="descargarPedido('${p.cliente}', '${p.detalles}')">📥 Descargar para Blink</button>
+                    ` : `<button onclick="borrarPedido('${p.id}')" style="color:red; border:none; background:none; cursor:pointer; font-size:11px; margin-top:10px">🗑️ Eliminar Permanente</button>`}
                 </div>`;
         });
     }
 
-    async function eliminarProducto(id) {
-        if(confirm("¿Seguro que querés borrar este producto?")) {
-            await supabaseClient.from('productos').delete().eq('id', id);
-            cargarLista();
-        }
-    }
-
-    function prepararEdicion(id, nombre, costo, img, talles, colores, fotos) {
-        document.getElementById('edit-id').value = id;
-        document.getElementById('nombre').value = nombre;
-        document.getElementById('costo').value = costo;
-        document.getElementById('img_url').value = img;
-        document.getElementById('talles').value = talles;
-        document.getElementById('colores').value = colores;
-        document.getElementById('fotos_extra').value = fotos;
-        document.getElementById('form-title').innerText = "Editando Producto";
-        document.getElementById('btn-action').innerText = "Guardar Cambios";
-        document.getElementById('btn-action').style.background = "#007bff";
-        document.getElementById('btn-cancel').style.display = "block";
-        window.scrollTo(0,0);
-        calcularVenta();
-    }
-
-    function cancelarEdicion() { location.reload(); }
-
-    // GESTIÓN DE PEDIDOS
-    async function cargarPedidos() {
-        const { data, error } = await supabaseClient.from('pedidos').select('*').order('created_at', { ascending: false });
-        const div = document.getElementById('lista-pedidos');
-        div.innerHTML = '';
-        
-        if (error) { div.innerHTML = "Error: " + error.message; return; }
-        if (!data || data.length === 0) { div.innerHTML = 'Sin pedidos aún.'; return; }
-
-        data.forEach(p => {
-            const fecha = new Date(p.created_at).toLocaleString('es-AR');
-            div.innerHTML += `
-                <div class="order-item">
-                    <b>👤 Cliente: ${p.cliente}</b>
-                    <small>📅 ${fecha}</small>
-                    <div style="font-size:12px; background:#f9f9f9; padding:10px; border-radius:8px; border-left: 4px solid #d4a373;">
-                        ${p.detalles.replace(/\n/g, '<br>')}
-                    </div>
-                    <b>Total: ${p.total}</b>
-                    <button onclick="borrarPedido('${p.id}')" style="color:red; background:none; border:none; cursor:pointer; text-align:left; padding:0; font-size:11px;">🗑️ Borrar de la lista</button>
-                </div>`;
-        });
+    async function cambiarEstado(id, nuevo) {
+        await supabaseClient.from('pedidos').update({ estado: nuevo }).eq('id', id);
+        cargarPedidos('NUEVO', 'lista-pedidos');
     }
 
     async function borrarPedido(id) {
-        if(confirm("¿Borrar registro de pedido?")) {
+        if(confirm("¿Borrar definitivamente?")) {
             await supabaseClient.from('pedidos').delete().eq('id', id);
-            cargarPedidos();
+            cargarPedidos('ARCHIVADO', 'lista-historial');
         }
     }
 
-    // Carga inicial
-    cargarLista();
+    function descargarPedido(cliente, detalles) {
+        const texto = `RESUMEN DE COMPRA - ${cliente}\n--------------------------\n${detalles}`;
+        const blob = new Blob([texto], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Pedido_${cliente}.txt`;
+        a.click();
+    }
+
+    cargarPedidos('NUEVO', 'lista-pedidos');
 </script>
 </body>
 </html>
