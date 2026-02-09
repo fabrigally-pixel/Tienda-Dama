@@ -3,52 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boutique - Carrito de Compras</title>
+    <title>SHOWROOM - Tienda Online</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --accent: #d4a373; --bg: #fdf6f0; --text: #4a4a4a; --green: #25d366; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 100px; }
-        
         header { background: white; padding: 30px 20px; text-align: center; border-bottom: 2px solid #f0e4d7; }
-        header h1 { margin: 0; color: var(--accent); letter-spacing: 2px; }
-
+        header h1 { margin: 0; color: var(--accent); letter-spacing: 4px; font-size: 2.5em; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
-        
-        /* Tarjeta de Producto */
-        .product-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; display: flex; flex-direction: column; }
-        
-        /* Galería */
+        .product-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; display: flex; flex-direction: column; position: relative; }
         .img-container { position: relative; width: 100%; height: 400px; background: #eee; overflow: hidden; }
-        .main-img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
+        .main-img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; transition: 0.3s; }
+        .main-img:active { transform: scale(1.05); }
         .thumb-bar { display: flex; gap: 5px; padding: 10px; overflow-x: auto; background: #fff; }
         .thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 2px solid transparent; }
         .thumb.active { border-color: var(--accent); }
-
-        .info { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
-        .price { font-size: 24px; font-weight: bold; color: var(--accent); margin-bottom: 5px; }
-        h3 { margin: 0 0 15px 0; font-size: 1.3em; }
-
-        /* Selectores */
+        .info { padding: 20px; flex-grow: 1; }
+        .price { font-size: 24px; font-weight: bold; color: var(--accent); }
+        h3 { margin: 5px 0 15px 0; font-size: 1.3em; text-transform: uppercase; }
         .selector-group { margin-bottom: 15px; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px; }
-        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: #fafafa; outline: none; }
-
-        .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-add:disabled { background: #ccc; cursor: not-allowed; }
-
+        label { display: block; font-size: 11px; font-weight: bold; color: #999; margin-bottom: 5px; }
+        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: #fafafa; }
+        .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+        
         /* Carrito Flotante */
-        .cart-float { position: fixed; bottom: 20px; right: 20px; background: var(--green); color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; display: none; z-index: 100; font-weight: bold; border: none; align-items: center; gap: 10px; font-size: 16px; }
+        .cart-float { position: fixed; bottom: 20px; right: 20px; background: var(--green); color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); cursor: pointer; display: none; z-index: 100; font-weight: bold; border: none; font-size: 16px; animation: pop 0.3s ease; }
+        @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
 
-        /* Modal de confirmación */
-        .modal { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; }
-        .btn-confirm { background: var(--green); color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 15px; }
+        /* Modales */
+        .modal { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .cart-item-list { text-align: left; margin: 15px 0; border-top: 1px solid #eee; padding-top: 10px; }
+        .cart-item-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
+        
+        /* Lightbox (Zoom de imagen) */
+        #lightbox { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 300; justify-content:center; align-items:center; cursor: zoom-out; }
+        #lightbox img { max-width: 95%; max-height: 95%; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>BOUTIQUE</h1>
+    <h1>SHOWROOM</h1>
     <p>Calidad y Estilo en cada prenda</p>
 </header>
 
@@ -57,16 +53,27 @@
 </div>
 
 <button class="cart-float" id="cart-float" onclick="abrirModal()">
-    🛒 Ver Pedido (<span id="cart-count">0</span>)
+    🛒 Ver mi Carrito (<span id="cart-count">0</span>)
 </button>
+
+<div id="lightbox" onclick="this.style.display='none'">
+    <img id="img-zoom" src="">
+</div>
 
 <div class="modal" id="modal-cliente">
     <div class="modal-content">
-        <h3>¡Ya casi está!</h3>
-        <p>Ingresá tu nombre para que podamos identificar tu pedido:</p>
-        <input type="text" id="nombre-cliente" placeholder="Tu nombre completo" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin: 15px 0; box-sizing: border-box;">
-        <button class="btn-confirm" onclick="finalizarPedido()">Finalizar y enviar WhatsApp</button>
-        <button onclick="cerrarModal()" style="background:none; border:none; color: gray; margin-top:10px; cursor:pointer">Volver atrás</button>
+        <h2 style="color:var(--accent); margin-top:0">Tu Pedido</h2>
+        
+        <div id="resumen-carrito" class="cart-item-list">
+            </div>
+
+        <label>¿A nombre de quién el pedido?</label>
+        <input type="text" id="nombre-cliente" placeholder="Tu nombre completo" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin: 10px 0; box-sizing: border-box;">
+        
+        <button onclick="finalizarPedido()" style="background:var(--green); color:white; border:none; padding:15px; border-radius:12px; width:100%; font-weight:bold; cursor:pointer; font-size:16px">
+            Enviar por WhatsApp
+        </button>
+        <button onclick="cerrarModal()" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer; width:100%">Seguir mirando</button>
     </div>
 </div>
 
@@ -84,117 +91,86 @@
         contenedor.innerHTML = '';
 
         productos.forEach(p => {
-            const listaFotos = p.fotos ? p.fotos.split(',').map(f => f.trim()) : [];
-            const todasLasFotos = [p.imagen_url, ...listaFotos].filter(f => f);
-            const talles = p.descripcion ? p.descripcion.split(',').map(t => t.trim()) : [];
-            const colores = p.marca ? p.marca.split(',').map(c => c.trim()) : [];
+            const fotos = [p.imagen_url, ...(p.fotos ? p.fotos.split(',') : [])].map(f => f.trim()).filter(f => f);
+            const talles = p.descripcion ? p.descripcion.split(',') : [];
+            const colores = p.marca ? p.marca.split(',') : [];
 
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
                 <div class="img-container">
-                    <img src="${todasLasFotos[0]}" class="main-img" id="main-${p.id}">
+                    <img src="${fotos[0]}" class="main-img" onclick="hacerZoom('${fotos[0]}')" id="main-${p.id}">
                 </div>
-                ${todasLasFotos.length > 1 ? `
-                <div class="thumb-bar">
-                    ${todasLasFotos.map(f => `<img src="${f}" class="thumb" onclick="changeImg('${p.id}', '${f}')">`).join('')}
-                </div>` : ''}
-                
+                ${fotos.length > 1 ? `<div class="thumb-bar">${fotos.map(f => `<img src="${f}" class="thumb" onclick="changeImg('${p.id}', '${f}')">`).join('')}</div>` : ''}
                 <div class="info">
                     <div class="price">${p.categoria}</div>
                     <h3>${p.nombre}</h3>
-                    
                     <div class="selector-group">
-                        <label>Seleccioná Talle:</label>
-                        <select id="talle-${p.id}">
-                            <option value="">Elegir talle...</option>
-                            ${talles.map(t => `<option value="${t}">${t}</option>`).join('')}
-                        </select>
+                        <label>Talle:</label>
+                        <select id="talle-${p.id}">${talles.map(t => `<option value="${t.trim()}">${t.trim()}</option>`).join('')}</select>
                     </div>
-
                     <div class="selector-group">
-                        <label>Seleccioná Color:</label>
-                        <select id="color-${p.id}">
-                            <option value="">Elegir color...</option>
-                            ${colores.map(c => `<option value="${c}">${c}</option>`).join('')}
-                        </select>
+                        <label>Color:</label>
+                        <select id="color-${p.id}">${colores.map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('')}</select>
                     </div>
-
-                    <button class="btn-add" onclick="agregarAlCarrito('${p.id}', '${p.nombre}', '${p.categoria}')">
-                        Agregar al carrito
-                    </button>
+                    <button class="btn-add" onclick="agregarAlCarrito('${p.id}', '${p.nombre}', '${p.categoria}')">Agregar al Carrito</button>
                 </div>
             `;
             contenedor.appendChild(card);
         });
     }
 
-    function changeImg(id, src) {
-        document.getElementById(`main-${id}`).src = src;
+    function changeImg(id, src) { document.getElementById(`main-${id}`).src = src; }
+    
+    function hacerZoom(src) {
+        document.getElementById('img-zoom').src = src;
+        document.getElementById('lightbox').style.display = 'flex';
     }
 
     function agregarAlCarrito(id, nombre, precio) {
         const talle = document.getElementById(`talle-${id}`).value;
         const color = document.getElementById(`color-${id}`).value;
-
-        if (!talle || !color) {
-            alert("Por favor, seleccioná talle y color antes de agregar.");
-            return;
-        }
-
         carrito.push({ nombre, precio, talle, color });
-        
-        const floatBtn = document.getElementById('cart-float');
-        floatBtn.style.display = 'flex';
+        document.getElementById('cart-float').style.display = 'block';
         document.getElementById('cart-count').innerText = carrito.length;
-        
-        // Efecto visual de botón
-        alert(`¡${nombre} (Talle ${talle}) agregado!`);
+        alert("Agregado al carrito!");
     }
 
     function abrirModal() {
+        const resumen = document.getElementById('resumen-carrito');
+        resumen.innerHTML = carrito.map(i => `
+            <div class="cart-item-row">
+                <span><b>${i.nombre}</b> (${i.talle}/${i.color})</span>
+                <span>${i.precio}</span>
+            </div>
+        `).join('');
         document.getElementById('modal-cliente').style.display = 'flex';
     }
 
-    function cerrarModal() {
-        document.getElementById('modal-cliente').style.display = 'none';
-    }
+    function cerrarModal() { document.getElementById('modal-cliente').style.display = 'none'; }
 
     async function finalizarPedido() {
         const cliente = document.getElementById('nombre-cliente').value;
-        if (!cliente) return alert("Por favor, ingresá tu nombre.");
+        if (!cliente) return alert("Ingresá tu nombre");
 
-        let textoDetalles = "";
-        let totalSuma = 0;
-
-        carrito.forEach((item, index) => {
-            textoDetalles += `${index + 1}. ${item.nombre} - Talle: ${item.talle} - Color: ${item.color} (${item.precio})\n`;
+        let textoWhatsApp = `¡Hola! Soy *${cliente}*, quiero estos productos de tu SHOWROOM:\n\n`;
+        carrito.forEach((item, idx) => {
+            textoWhatsApp += `${idx+1}. ${item.nombre} (Talle: ${item.talle}, Color: ${item.color}) - ${item.precio}\n`;
         });
 
-        // Guardar en Supabase tabla 'pedidos'
-        const { error } = await supabaseClient.from('pedidos').insert([
-            {
+        // Intentar guardar en Supabase
+        try {
+            await supabaseClient.from('pedidos').insert([{
                 cliente: cliente,
-                detalles: textoDetalles,
+                detalles: textoWhatsApp,
                 total: carrito.length + " artículos",
                 estado: "NUEVO"
-            }
-        ]);
+            }]);
+        } catch (e) { console.log("Error guardando copia en DB"); }
 
-        if (error) {
-            console.error(error);
-            alert("Hubo un error al registrar el pedido, pero podés enviarlo por WhatsApp igual.");
-        }
-
-        // Enviar a WhatsApp
-        let mensajeWa = `¡Hola! Soy *${cliente}*, quiero realizar este pedido:\n\n${textoDetalles}\n¿Tienen disponibilidad?`;
-        window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensajeWa)}`, '_blank');
-        
-        // Limpiar carrito
+        window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(textoWhatsApp)}`, '_blank');
         carrito = [];
-        document.getElementById('cart-count').innerText = "0";
-        document.getElementById('cart-float').style.display = 'none';
-        cerrarModal();
+        location.reload();
     }
 
     cargarProductos();
