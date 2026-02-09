@@ -81,7 +81,7 @@
     
     let productosAll = [];
     let carrito = [];
-    const categoriasMenu = ["Todo", "Camisas", "Pantalones", "Remeras & Tops", "Sweaters & Buzos", "Blazers & Camperas", "Shorts & Camperas", "Monos & Vestidos", "Blusas"];
+    const categoriasMenu = ["Todo", "Camisas", "Pantalones", "Remeras & Tops", "Sweaters & Buzos", "Blazers & Camperas", "Shorts & Polleras", "Monos & Vestidos", "Blusas"];
 
     async function cargarProductos() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', { ascending: false });
@@ -153,3 +153,4 @@
 </script>
 </body>
 </html>
+
