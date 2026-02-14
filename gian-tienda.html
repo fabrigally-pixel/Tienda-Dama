@@ -20,6 +20,10 @@
         .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .fotos-pedido { display: flex; gap: 5px; overflow-x: auto; margin-top: 10px; padding-bottom: 5px; }
         .fotos-pedido img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
+        
+        /* Estilo para el importador */
+        .import-box { background: #e3f2fd; padding: 15px; border-radius: 15px; border: 1px dashed #2196f3; margin-bottom: 20px; }
+        .btn-import { background: #2196f3; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
     </style>
 </head>
 <body>
@@ -31,6 +35,15 @@
 </div>
 
 <div id="sec-carga" class="section active">
+    
+    <div class="card import-box">
+        <h3 style="margin:0 0 10px 0; color:#2196f3;">🪄 Importar desde Blink</h3>
+        <label>Pegá el Link del producto aquí:</label>
+        <input type="text" id="link_blink" placeholder="https://blinkba.com/products/...">
+        <button class="btn-import" onclick="importarDeBlink()">Traer Datos Automáticamente</button>
+        <p id="loading-msg" style="display:none; font-size:12px; color:#2196f3; text-align:center;">Analizando página... esperá un toque...</p>
+    </div>
+
     <div class="card">
         <h2 id="form-title" style="margin:0; color:#d4a373;">Cargar Prenda</h2>
         <input type="hidden" id="edit-id">
@@ -45,8 +58,17 @@
         <label>Descripción / Tabla de Talles (Texto)</label><textarea id="tabla_talles_text" placeholder="Ej: Medidas del talle S..."></textarea>
         <label>Foto Principal (Link)</label><input type="text" id="img_url">
         <label>Fotos Extra (Links separados por coma)</label><textarea id="links_fotos_extra" placeholder="link1, link2..."></textarea>
-        <label>Costo ($)</label><input type="number" id="costo">
-        <label>Precio Venta ($)</label><input type="text" id="precio_venta">
+        
+        <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
+        
+        <label>Ganancia % (Automático)</label>
+        <input type="number" id="porcentaje" value="80" oninput="calcularVenta()">
+        
+        <div style="background:#eee; padding:10px; border-radius:10px; margin-top:10px; text-align:center;">
+            Precio Final: <b id="precio_final" style="font-size:20px;">$0</b>
+            <input type="hidden" id="precio_venta"> 
+        </div>
+
         <button id="btn-action" onclick="guardarProducto()" class="btn-main">Publicar Producto</button>
         <button id="btn-cancel" onclick="location.reload()" style="display:none; width:100%; background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancelar Edición</button>
     </div>
@@ -61,6 +83,72 @@
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // --- NUEVA LÓGICA DE IMPORTACIÓN ---
+    async function importarDeBlink() {
+        const url = document.getElementById('link_blink').value;
+        if (!url) return alert("Pegá un link primero");
+        
+        document.getElementById('loading-msg').style.display = 'block';
+
+        try {
+            // Usamos un proxy para poder leer la pagina de Blink desde tu admin
+            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            if (!data.contents) throw new Error("No se pudo leer la página");
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.contents, "text/html");
+
+            // 1. Extraer Título (Intentamos leer etiquetas Meta)
+            const tituloMeta = doc.querySelector('meta[property="og:title"]')?.content || "";
+            const tituloLimpio = tituloMeta.replace(" - Blink", "").trim();
+            document.getElementById('nombre').value = tituloLimpio;
+
+            // 2. Extraer Imagen
+            let imgMeta = doc.querySelector('meta[property="og:image"]')?.content || "";
+            // A veces viene con http: o https: faltante
+            if (imgMeta && !imgMeta.startsWith('http')) imgMeta = 'https:' + imgMeta;
+            document.getElementById('img_url').value = imgMeta;
+
+            // 3. Extraer Precio (Buscamos la etiqueta de precio de Shopify)
+            const precioMeta = doc.querySelector('meta[property="og:price:amount"]')?.content;
+            let precioCosto = 0;
+
+            if (precioMeta) {
+                precioCosto = parseFloat(precioMeta);
+            } else {
+                // Plan B: Buscar en el texto visible si no hay meta tag
+                const precioTexto = doc.querySelector('.price')?.innerText || "0";
+                precioCosto = parseFloat(precioTexto.replace(/[^0-9]/g, ''));
+            }
+
+            document.getElementById('costo').value = precioCosto;
+
+            // 4. Calcular Venta con el 80% (o lo que esté en el input porcentaje)
+            calcularVenta();
+
+            // 5. Intentar adivinar la categoría por el título
+            const catSelect = document.getElementById('categoria-prenda');
+            const tituloLower = tituloLimpio.toLowerCase();
+            
+            if(tituloLower.includes('short')) catSelect.value = "Shorts & Polleras";
+            else if(tituloLower.includes('jean') || tituloLower.includes('pantalon')) catSelect.value = "Pantalones";
+            else if(tituloLower.includes('camisa')) catSelect.value = "Camisas";
+            else if(tituloLower.includes('top') || tituloLower.includes('remera')) catSelect.value = "Remeras & Tops";
+            else if(tituloLower.includes('vestido')) catSelect.value = "Monos & Vestidos";
+            else if(tituloLower.includes('buzo') || tituloLower.includes('sweater')) catSelect.value = "Sweaters & Buzos";
+
+            alert("¡Datos importados! Revisá y dale a Publicar.");
+
+        } catch (error) {
+            alert("No se pudo importar automáticamente. Intenta cargar manual. Error: " + error.message);
+        } finally {
+            document.getElementById('loading-msg').style.display = 'none';
+        }
+    }
+
     function switchTab(tab, el) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -71,8 +159,22 @@
         if(tab === 'carga') cargarLista();
     }
 
+    function calcularVenta() {
+        const c = parseFloat(document.getElementById('costo').value) || 0;
+        const p = parseFloat(document.getElementById('porcentaje').value) || 0;
+        const total = Math.round(c * (1 + p/100));
+        
+        // Guardamos el número en el hidden y mostramos el texto bonito
+        document.getElementById('precio_venta').value = "$" + total.toLocaleString(); 
+        document.getElementById('precio_final').innerText = "$" + total.toLocaleString();
+    }
+
     async function guardarProducto() {
         const id = document.getElementById('edit-id').value;
+        
+        // Si el precio de venta está vacío, lo calculamos ahora
+        if(!document.getElementById('precio_venta').value) calcularVenta();
+
         const datos = {
             nombre: document.getElementById('nombre').value,
             precio_costo: parseFloat(document.getElementById('costo').value) || 0,
@@ -90,11 +192,11 @@
     }
 
     async function cargarLista() {
-        const { data } = await supabaseClient.from('productos').select('*');
+        const { data } = await supabaseClient.from('productos').select('*').order('created_at', {ascending: false});
         document.getElementById('lista-productos').innerHTML = data.map(p => `
             <div class="prod-item">
                 <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
-                <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b></div>
+                <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b><br><small>${p.marca}</small></div>
                 <button onclick="prepararEdicion('${p.id}','${p.nombre}','${p.marca}','${p.descripcion}','${p.marca_detalle}','${p.imagen_url}','${p.fotos_extra}','${p.tabla_talles}',${p.precio_costo},'${p.categoria}')">✏️</button>
                 <button onclick="eliminar('${p.id}')">🗑️</button>
             </div>`).join('');
@@ -110,36 +212,34 @@
         document.getElementById('links_fotos_extra').value = fextra || '';
         document.getElementById('tabla_talles_text').value = ttalle || '';
         document.getElementById('costo').value = costo;
-        document.getElementById('precio_venta').value = venta;
         
-        document.getElementById('form-title').innerText = "Editando Producto";
+        // Ponemos el precio en el input oculto y en el visual
+        document.getElementById('precio_venta').value = venta;
+        document.getElementById('precio_final').innerText = venta;
+
         document.getElementById('btn-action').innerText = "Guardar Cambios";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
     }
 
     async function cargarPedidos(estado, contenedor) {
-        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', estado);
+        const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', estado).order('created_at', {ascending: false});
         const div = document.getElementById(contenedor);
-        div.innerHTML = (data && data.length > 0) ? '' : '<p>No hay registros</p>';
-        
-        data?.forEach(p => {
-            // Mostrar fotos del pedido
-            const listaFotos = p.fotos_pedido ? p.fotos_pedido.split(',') : [];
-            const htmlFotos = listaFotos.map(f => `<a href="${f}" target="_blank"><img src="${f}"></a>`).join('');
-
-            div.innerHTML += `
-                <div class="order-card">
-                    <b>👤 ${p.cliente}</b>
-                    <p style="font-size:12px; white-space:pre-line;">${p.detalles}</p>
-                    ${htmlFotos ? `<div class="fotos-pedido">${htmlFotos}</div>` : ''}
-                    
-                    ${estado==='NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')" style="width:100%; margin-top:10px; cursor:pointer; padding:10px; background:#28a745; color:white; border:none; border-radius:5px;">✅ Pedido Entregado / Archivar</button>` : ''}
-                </div>`;
-        });
+        div.innerHTML = data.map(p => {
+            const fotos = p.fotos_pedido ? p.fotos_pedido.split(',') : [];
+            const htmlFotos = fotos.map(f => `<a href="${f}" target="_blank"><img src="${f}"></a>`).join('');
+            
+            return `
+            <div class="order-card">
+                <b>👤 ${p.cliente}</b>
+                <p style="font-size:12px;">${p.detalles.replace(/\n/g, '<br>')}</p>
+                <div class="fotos-pedido">${htmlFotos}</div>
+                ${estado==='NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px;">✅ Archivar</button>` : ''}
+            </div>`;
+        }).join('') || '<p>No hay registros</p>';
     }
 
-    async function cambiarEstado(id, est) { await supabaseClient.from('pedidos').update({estado:est}).eq('id',id); switchTab('pedidos'); }
+    async function cambiarEstado(id, est) { await supabaseClient.from('pedidos').update({estado:est}).eq('id',id); switchTab('pedidos', document.querySelectorAll('.tab-btn')[1]); }
     async function eliminar(id) { if(confirm("¿Borrar?")) await supabaseClient.from('productos').delete().eq('id',id); cargarLista(); }
     cargarLista();
 </script>
