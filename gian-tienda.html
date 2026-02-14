@@ -21,7 +21,7 @@
         .fotos-pedido { display: flex; gap: 5px; overflow-x: auto; margin-top: 10px; padding-bottom: 5px; }
         .fotos-pedido img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
         
-        /* Estilo para el importador */
+        /* Importador */
         .import-box { background: #e3f2fd; padding: 15px; border-radius: 15px; border: 1px dashed #2196f3; margin-bottom: 20px; }
         .btn-import { background: #2196f3; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
     </style>
@@ -41,7 +41,7 @@
         <label>Pegá el Link del producto aquí:</label>
         <input type="text" id="link_blink" placeholder="https://blinkba.com/products/...">
         <button class="btn-import" onclick="importarDeBlink()">Traer Datos Automáticamente</button>
-        <p id="loading-msg" style="display:none; font-size:12px; color:#2196f3; text-align:center;">Analizando página... esperá un toque...</p>
+        <p id="loading-msg" style="display:none; font-size:12px; color:#2196f3; text-align:center;">Buscando datos...</p>
     </div>
 
     <div class="card">
@@ -61,7 +61,7 @@
         
         <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
         
-        <label>Ganancia % (Automático)</label>
+        <label>Ganancia %</label>
         <input type="number" id="porcentaje" value="80" oninput="calcularVenta()">
         
         <div style="background:#eee; padding:10px; border-radius:10px; margin-top:10px; text-align:center;">
@@ -83,67 +83,91 @@
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- NUEVA LÓGICA DE IMPORTACIÓN ---
+    // --- IMPORTADOR INTELIGENTE (Método JSON) ---
     async function importarDeBlink() {
-        const url = document.getElementById('link_blink').value;
+        let url = document.getElementById('link_blink').value;
         if (!url) return alert("Pegá un link primero");
+        
+        // Limpiamos la URL de parámetros extra (?variant=...)
+        url = url.split('?')[0];
+        
+        // Agregamos .json al final para obtener los datos puros
+        const jsonUrl = url + '.json';
         
         document.getElementById('loading-msg').style.display = 'block';
 
         try {
-            // Usamos un proxy para poder leer la pagina de Blink desde tu admin
-            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-            const response = await fetch(proxyUrl);
-            const data = await response.json();
+            const response = await fetch(jsonUrl);
+            if (!response.ok) throw new Error("No se pudo conectar con Blink");
             
-            if (!data.contents) throw new Error("No se pudo leer la página");
+            const data = await response.json();
+            const product = data.product;
 
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data.contents, "text/html");
+            // 1. Título
+            document.getElementById('nombre').value = product.title;
 
-            // 1. Extraer Título (Intentamos leer etiquetas Meta)
-            const tituloMeta = doc.querySelector('meta[property="og:title"]')?.content || "";
-            const tituloLimpio = tituloMeta.replace(" - Blink", "").trim();
-            document.getElementById('nombre').value = tituloLimpio;
-
-            // 2. Extraer Imagen
-            let imgMeta = doc.querySelector('meta[property="og:image"]')?.content || "";
-            // A veces viene con http: o https: faltante
-            if (imgMeta && !imgMeta.startsWith('http')) imgMeta = 'https:' + imgMeta;
-            document.getElementById('img_url').value = imgMeta;
-
-            // 3. Extraer Precio (Buscamos la etiqueta de precio de Shopify)
-            const precioMeta = doc.querySelector('meta[property="og:price:amount"]')?.content;
-            let precioCosto = 0;
-
-            if (precioMeta) {
-                precioCosto = parseFloat(precioMeta);
-            } else {
-                // Plan B: Buscar en el texto visible si no hay meta tag
-                const precioTexto = doc.querySelector('.price')?.innerText || "0";
-                precioCosto = parseFloat(precioTexto.replace(/[^0-9]/g, ''));
+            // 2. Foto Principal
+            if (product.image && product.image.src) {
+                document.getElementById('img_url').value = product.image.src;
             }
 
-            document.getElementById('costo').value = precioCosto;
+            // 3. Fotos Extra (Todas las demás)
+            if (product.images && product.images.length > 1) {
+                // Tomamos todas menos la primera (que ya es la principal)
+                const extras = product.images.slice(1).map(img => img.src).join(', ');
+                document.getElementById('links_fotos_extra').value = extras;
+            }
 
-            // 4. Calcular Venta con el 80% (o lo que esté en el input porcentaje)
+            // 4. Precio (Buscamos en las variantes)
+            if (product.variants && product.variants.length > 0) {
+                const precio = parseFloat(product.variants[0].price);
+                document.getElementById('costo').value = precio;
+            }
+
+            // 5. Intentar sacar Talles y Colores de las opciones
+            if (product.options) {
+                product.options.forEach(opt => {
+                    if (opt.name.toLowerCase().includes('talle') || opt.name.toLowerCase().includes('size')) {
+                        document.getElementById('talles').value = opt.values.join(', ');
+                    }
+                    if (opt.name.toLowerCase().includes('color')) {
+                        document.getElementById('colores').value = opt.values.join(', ');
+                    }
+                });
+            }
+
+            // 6. Descripción (Limpiamos el HTML para sacar solo el texto de talles si se puede)
+            // A veces Blink pone la tabla en HTML, tratamos de limpiarlo un poco
+            let desc = product.body_html || "";
+            // Quitamos etiquetas HTML simples para dejar texto
+            let div = document.createElement("div");
+            div.innerHTML = desc;
+            let textoLimpio = div.textContent || div.innerText || "";
+            // Recortamos si es muy largo, solo como referencia
+            if(textoLimpio.length > 200) textoLimpio = textoLimpio.substring(0, 200) + "...";
+            document.getElementById('tabla_talles_text').value = textoLimpio;
+
+            // Calcular Precio Venta
             calcularVenta();
 
-            // 5. Intentar adivinar la categoría por el título
+            // Adivinar Categoría
             const catSelect = document.getElementById('categoria-prenda');
-            const tituloLower = tituloLimpio.toLowerCase();
-            
-            if(tituloLower.includes('short')) catSelect.value = "Shorts & Polleras";
-            else if(tituloLower.includes('jean') || tituloLower.includes('pantalon')) catSelect.value = "Pantalones";
+            const tituloLower = product.title.toLowerCase();
+            const tipoLower = (product.product_type || "").toLowerCase();
+
+            if(tituloLower.includes('short') || tipoLower.includes('short')) catSelect.value = "Shorts & Polleras";
+            else if(tituloLower.includes('jean') || tituloLower.includes('pantal')) catSelect.value = "Pantalones";
             else if(tituloLower.includes('camisa')) catSelect.value = "Camisas";
             else if(tituloLower.includes('top') || tituloLower.includes('remera')) catSelect.value = "Remeras & Tops";
-            else if(tituloLower.includes('vestido')) catSelect.value = "Monos & Vestidos";
+            else if(tituloLower.includes('vestido') || tituloLower.includes('mono')) catSelect.value = "Monos & Vestidos";
             else if(tituloLower.includes('buzo') || tituloLower.includes('sweater')) catSelect.value = "Sweaters & Buzos";
+            else if(tituloLower.includes('blazer') || tituloLower.includes('campera')) catSelect.value = "Blazers & Camperas";
 
-            alert("¡Datos importados! Revisá y dale a Publicar.");
+            alert("¡Listo! Datos cargados. Revisá y Publicá.");
 
         } catch (error) {
-            alert("No se pudo importar automáticamente. Intenta cargar manual. Error: " + error.message);
+            console.error(error);
+            alert("No funcionó la importación automática. Probá carga manual. (Error: " + error.message + ")");
         } finally {
             document.getElementById('loading-msg').style.display = 'none';
         }
@@ -163,16 +187,12 @@
         const c = parseFloat(document.getElementById('costo').value) || 0;
         const p = parseFloat(document.getElementById('porcentaje').value) || 0;
         const total = Math.round(c * (1 + p/100));
-        
-        // Guardamos el número en el hidden y mostramos el texto bonito
         document.getElementById('precio_venta').value = "$" + total.toLocaleString(); 
         document.getElementById('precio_final').innerText = "$" + total.toLocaleString();
     }
 
     async function guardarProducto() {
         const id = document.getElementById('edit-id').value;
-        
-        // Si el precio de venta está vacío, lo calculamos ahora
         if(!document.getElementById('precio_venta').value) calcularVenta();
 
         const datos = {
@@ -212,11 +232,8 @@
         document.getElementById('links_fotos_extra').value = fextra || '';
         document.getElementById('tabla_talles_text').value = ttalle || '';
         document.getElementById('costo').value = costo;
-        
-        // Ponemos el precio en el input oculto y en el visual
         document.getElementById('precio_venta').value = venta;
         document.getElementById('precio_final').innerText = venta;
-
         document.getElementById('btn-action').innerText = "Guardar Cambios";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
@@ -228,7 +245,6 @@
         div.innerHTML = data.map(p => {
             const fotos = p.fotos_pedido ? p.fotos_pedido.split(',') : [];
             const htmlFotos = fotos.map(f => `<a href="${f}" target="_blank"><img src="${f}"></a>`).join('');
-            
             return `
             <div class="order-card">
                 <b>👤 ${p.cliente}</b>
