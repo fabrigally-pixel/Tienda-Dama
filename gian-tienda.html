@@ -20,8 +20,6 @@
         .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .fotos-pedido { display: flex; gap: 5px; overflow-x: auto; margin-top: 10px; padding-bottom: 5px; }
         .fotos-pedido img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
-        
-        /* Importador */
         .import-box { background: #e3f2fd; padding: 15px; border-radius: 15px; border: 1px dashed #2196f3; margin-bottom: 20px; }
         .btn-import { background: #2196f3; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
     </style>
@@ -82,49 +80,33 @@
     const SUPABASE_URL = "https://hnnixqelbkuyfplnncci.supabase.co";
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // VARIABLE GLOBAL PARA GUARDAR PRODUCTOS (ESTO EVITA EL ERROR DE EDICIÓN)
+    let globalProductos = [];
 
-    // --- IMPORTADOR INTELIGENTE (Método JSON) ---
+    // --- IMPORTADOR INTELIGENTE ---
     async function importarDeBlink() {
         let url = document.getElementById('link_blink').value;
         if (!url) return alert("Pegá un link primero");
-        
-        // Limpiamos la URL de parámetros extra (?variant=...)
         url = url.split('?')[0];
-        
-        // Agregamos .json al final para obtener los datos puros
         const jsonUrl = url + '.json';
-        
         document.getElementById('loading-msg').style.display = 'block';
 
         try {
             const response = await fetch(jsonUrl);
             if (!response.ok) throw new Error("No se pudo conectar con Blink");
-            
             const data = await response.json();
             const product = data.product;
 
-            // 1. Título
             document.getElementById('nombre').value = product.title;
-
-            // 2. Foto Principal
-            if (product.image && product.image.src) {
-                document.getElementById('img_url').value = product.image.src;
-            }
-
-            // 3. Fotos Extra (Todas las demás)
+            if (product.image && product.image.src) document.getElementById('img_url').value = product.image.src;
             if (product.images && product.images.length > 1) {
-                // Tomamos todas menos la primera (que ya es la principal)
                 const extras = product.images.slice(1).map(img => img.src).join(', ');
                 document.getElementById('links_fotos_extra').value = extras;
             }
-
-            // 4. Precio (Buscamos en las variantes)
             if (product.variants && product.variants.length > 0) {
-                const precio = parseFloat(product.variants[0].price);
-                document.getElementById('costo').value = precio;
+                document.getElementById('costo').value = parseFloat(product.variants[0].price);
             }
-
-            // 5. Intentar sacar Talles y Colores de las opciones
             if (product.options) {
                 product.options.forEach(opt => {
                     if (opt.name.toLowerCase().includes('talle') || opt.name.toLowerCase().includes('size')) {
@@ -135,22 +117,15 @@
                     }
                 });
             }
-
-            // 6. Descripción (Limpiamos el HTML para sacar solo el texto de talles si se puede)
-            // A veces Blink pone la tabla en HTML, tratamos de limpiarlo un poco
             let desc = product.body_html || "";
-            // Quitamos etiquetas HTML simples para dejar texto
             let div = document.createElement("div");
             div.innerHTML = desc;
             let textoLimpio = div.textContent || div.innerText || "";
-            // Recortamos si es muy largo, solo como referencia
-            if(textoLimpio.length > 200) textoLimpio = textoLimpio.substring(0, 200) + "...";
+            if(textoLimpio.length > 300) textoLimpio = textoLimpio.substring(0, 300) + "...";
             document.getElementById('tabla_talles_text').value = textoLimpio;
 
-            // Calcular Precio Venta
             calcularVenta();
 
-            // Adivinar Categoría
             const catSelect = document.getElementById('categoria-prenda');
             const tituloLower = product.title.toLowerCase();
             const tipoLower = (product.product_type || "").toLowerCase();
@@ -163,11 +138,10 @@
             else if(tituloLower.includes('buzo') || tituloLower.includes('sweater')) catSelect.value = "Sweaters & Buzos";
             else if(tituloLower.includes('blazer') || tituloLower.includes('campera')) catSelect.value = "Blazers & Camperas";
 
-            alert("¡Listo! Datos cargados. Revisá y Publicá.");
-
+            alert("¡Datos importados! Revisá y dale a Publicar.");
         } catch (error) {
             console.error(error);
-            alert("No funcionó la importación automática. Probá carga manual. (Error: " + error.message + ")");
+            alert("No funcionó la importación automática. Probá carga manual.");
         } finally {
             document.getElementById('loading-msg').style.display = 'none';
         }
@@ -213,27 +187,35 @@
 
     async function cargarLista() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', {ascending: false});
-        document.getElementById('lista-productos').innerHTML = data.map(p => `
+        globalProductos = data || []; // Guardamos en memoria global
+        
+        document.getElementById('lista-productos').innerHTML = globalProductos.map(p => `
             <div class="prod-item">
                 <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
                 <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b><br><small>${p.marca}</small></div>
-                <button onclick="prepararEdicion('${p.id}','${p.nombre}','${p.marca}','${p.descripcion}','${p.marca_detalle}','${p.imagen_url}','${p.fotos_extra}','${p.tabla_talles}',${p.precio_costo},'${p.categoria}')">✏️</button>
+                <button onclick="prepararEdicion('${p.id}')">✏️</button>
                 <button onclick="eliminar('${p.id}')">🗑️</button>
             </div>`).join('');
     }
 
-    function prepararEdicion(id, nom, cat, tal, col, img, fextra, ttalle, costo, venta) {
-        document.getElementById('edit-id').value = id;
-        document.getElementById('nombre').value = nom;
-        document.getElementById('categoria-prenda').value = cat;
-        document.getElementById('talles').value = tal;
-        document.getElementById('colores').value = col;
-        document.getElementById('img_url').value = img;
-        document.getElementById('links_fotos_extra').value = fextra || '';
-        document.getElementById('tabla_talles_text').value = ttalle || '';
-        document.getElementById('costo').value = costo;
-        document.getElementById('precio_venta').value = venta;
-        document.getElementById('precio_final').innerText = venta;
+    // Esta función busca el producto en la memoria y llena el formulario
+    function prepararEdicion(id) {
+        const p = globalProductos.find(x => x.id == id);
+        if (!p) return;
+
+        document.getElementById('edit-id').value = p.id;
+        document.getElementById('nombre').value = p.nombre;
+        document.getElementById('categoria-prenda').value = p.marca;
+        document.getElementById('talles').value = p.descripcion;
+        document.getElementById('colores').value = p.marca_detalle;
+        document.getElementById('img_url').value = p.imagen_url;
+        document.getElementById('links_fotos_extra').value = p.fotos_extra || '';
+        document.getElementById('tabla_talles_text').value = p.tabla_talles || '';
+        document.getElementById('costo').value = p.precio_costo;
+        document.getElementById('precio_venta').value = p.categoria;
+        document.getElementById('precio_final').innerText = p.categoria;
+
+        document.getElementById('form-title').innerText = "Editando Producto";
         document.getElementById('btn-action').innerText = "Guardar Cambios";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
