@@ -18,6 +18,8 @@
         .btn-main { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; background:#d4a373; color:white; }
         .prod-item { display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee; padding:10px 0; }
         .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .fotos-pedido { display: flex; gap: 5px; overflow-x: auto; margin-top: 10px; padding-bottom: 5px; }
+        .fotos-pedido img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -33,7 +35,10 @@
         <h2 id="form-title" style="margin:0; color:#d4a373;">Cargar Prenda</h2>
         <input type="hidden" id="edit-id">
         <label>Categoría</label>
-        <select id="categoria-prenda"><option>Camisas</option><option>Pantalones</option><option>Remeras & Tops</option><option>Sweaters & Buzos</option><option>Blazers & Camperas</option><option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option></select>
+        <select id="categoria-prenda">
+            <option>Camisas</option><option>Pantalones</option><option>Remeras & Tops</option><option>Sweaters & Buzos</option>
+            <option>Blazers & Camperas</option><option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option>
+        </select>
         <label>Nombre</label><input type="text" id="nombre">
         <label>Talles (S, M, L)</label><input type="text" id="talles">
         <label>Colores (Blanco, Negro)</label><input type="text" id="colores">
@@ -42,7 +47,7 @@
         <label>Fotos Extra (Links separados por coma)</label><textarea id="links_fotos_extra" placeholder="link1, link2..."></textarea>
         <label>Costo ($)</label><input type="number" id="costo">
         <label>Precio Venta ($)</label><input type="text" id="precio_venta">
-        <button onclick="guardarProducto()" class="btn-main">Publicar Producto</button>
+        <button id="btn-action" onclick="guardarProducto()" class="btn-main">Publicar Producto</button>
         <button id="btn-cancel" onclick="location.reload()" style="display:none; width:100%; background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancelar Edición</button>
     </div>
     <div class="card"><h3>Stock Actual</h3><div id="lista-productos"></div></div>
@@ -88,7 +93,7 @@
         const { data } = await supabaseClient.from('productos').select('*');
         document.getElementById('lista-productos').innerHTML = data.map(p => `
             <div class="prod-item">
-                <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover;">
+                <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
                 <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b></div>
                 <button onclick="prepararEdicion('${p.id}','${p.nombre}','${p.marca}','${p.descripcion}','${p.marca_detalle}','${p.imagen_url}','${p.fotos_extra}','${p.tabla_talles}',${p.precio_costo},'${p.categoria}')">✏️</button>
                 <button onclick="eliminar('${p.id}')">🗑️</button>
@@ -106,6 +111,9 @@
         document.getElementById('tabla_talles_text').value = ttalle || '';
         document.getElementById('costo').value = costo;
         document.getElementById('precio_venta').value = venta;
+        
+        document.getElementById('form-title').innerText = "Editando Producto";
+        document.getElementById('btn-action').innerText = "Guardar Cambios";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
     }
@@ -113,12 +121,22 @@
     async function cargarPedidos(estado, contenedor) {
         const { data } = await supabaseClient.from('pedidos').select('*').eq('estado', estado);
         const div = document.getElementById(contenedor);
-        div.innerHTML = data.map(p => `
-            <div class="order-card">
-                <b>👤 ${p.cliente}</b>
-                <p style="font-size:12px;">${p.detalles.replace(/\n/g, '<br>')}</p>
-                ${estado==='NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')">✅ Archivar</button>` : ''}
-            </div>`).join('') || '<p>No hay registros</p>';
+        div.innerHTML = (data && data.length > 0) ? '' : '<p>No hay registros</p>';
+        
+        data?.forEach(p => {
+            // Mostrar fotos del pedido
+            const listaFotos = p.fotos_pedido ? p.fotos_pedido.split(',') : [];
+            const htmlFotos = listaFotos.map(f => `<a href="${f}" target="_blank"><img src="${f}"></a>`).join('');
+
+            div.innerHTML += `
+                <div class="order-card">
+                    <b>👤 ${p.cliente}</b>
+                    <p style="font-size:12px; white-space:pre-line;">${p.detalles}</p>
+                    ${htmlFotos ? `<div class="fotos-pedido">${htmlFotos}</div>` : ''}
+                    
+                    ${estado==='NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')" style="width:100%; margin-top:10px; cursor:pointer; padding:10px; background:#28a745; color:white; border:none; border-radius:5px;">✅ Pedido Entregado / Archivar</button>` : ''}
+                </div>`;
+        });
     }
 
     async function cambiarEstado(id, est) { await supabaseClient.from('pedidos').update({estado:est}).eq('id',id); switchTab('pedidos'); }
