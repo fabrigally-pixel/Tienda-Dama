@@ -11,46 +11,41 @@
         header { background: white; padding: 20px; text-align: center; border-bottom: 2px solid #f0e4d7; }
         header h1 { margin: 0; color: var(--accent); letter-spacing: 4px; font-size: 2.2em; }
         
-        /* Categorías */
         .category-bar { display: flex; gap: 10px; overflow-x: auto; padding: 15px; background: white; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #eee; scrollbar-width: none; }
         .cat-btn { padding: 8px 18px; background: #fff; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 20px; white-space: nowrap; cursor: pointer; font-weight: 600; font-size: 14px; }
         .cat-btn.active { background: var(--accent); color: white; }
 
-        /* Contenedor y Cards */
         .container { max-width: 1200px; margin: 10px auto; padding: 0 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .product-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 15px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; display: flex; flex-direction: column; }
         
-        /* Galería e Imagen */
-        .img-container { width: 100%; height: 350px; background: #fff; overflow: hidden; cursor: zoom-in; position: relative; }
+        .img-container { width: 100%; height: 350px; background: #fff; position: relative; overflow: hidden; cursor: zoom-in; }
         .main-img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
-        .mini-gal { display: flex; gap: 8px; padding: 10px; overflow-x: auto; background: #fafafa; border-bottom: 1px solid #eee; }
-        .mini-gal img { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1.5px solid transparent; }
+        
+        /* Galería de fotos extra */
+        .mini-gal { display: flex; gap: 5px; padding: 10px; background: #fff; overflow-x: auto; border-bottom: 1px solid #eee; }
+        .mini-gal img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 1px solid #ddd; }
         .mini-gal img:hover { border-color: var(--accent); }
 
-        /* Info del producto */
         .info { padding: 15px; flex-grow: 1; }
         .price { font-size: 22px; font-weight: bold; color: var(--accent); }
         h3 { margin: 5px 0 10px 0; font-size: 1.1em; text-transform: uppercase; color: #333; }
         
-        /* Cuadro de descripción de talles */
-        .talles-info-box { background: #fdf6f0; border-left: 4px solid var(--accent); padding: 10px; border-radius: 8px; font-size: 12px; margin: 10px 0; white-space: pre-line; color: #666; }
+        /* Info de talles */
+        .talles-info-box { background: #fff8f0; border-left: 4px solid var(--accent); padding: 10px; font-size: 12px; margin: 10px 0; border-radius: 5px; color: #555; white-space: pre-line; }
 
         .selector-group { margin-bottom: 10px; }
         label { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; display: block; margin-top: 5px; }
-        select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ddd; background: #fafafa; margin-bottom: 5px; }
+        select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; background: #fafafa; }
+        .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         
-        .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 15px; }
-
-        /* Carrito Flotante */
         .cart-float { position: fixed; bottom: 20px; right: 20px; background: var(--green); color: white; padding: 15px 25px; border-radius: 50px; cursor: pointer; display: none; z-index: 100; font-weight: bold; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-
-        /* Modales */
+        
         .modal { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; }
 
-        /* Zoom Pantalla Completa */
-        #zoom-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; cursor: zoom-out; }
-        #zoom-overlay img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 5px; }
+        /* Zoom Modal */
+        #zoom-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 1000; justify-content:center; align-items:center; cursor: zoom-out; }
+        #zoom-overlay img { max-width: 95%; max-height: 95%; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -66,13 +61,13 @@
     <p style="text-align: center; grid-column: 1/-1;">Cargando catálogo...</p>
 </div>
 
-<div id="zoom-overlay" onclick="this.style.display='none'">
-    <img id="img-zoom-target" src="">
-</div>
-
 <button class="cart-float" id="cart-float" onclick="abrirModal()">
     🛒 Ver Carrito (<span id="cart-count">0</span>)
 </button>
+
+<div id="zoom-overlay" onclick="this.style.display='none'">
+    <img id="img-zoom-target" src="">
+</div>
 
 <div class="modal" id="modal-cliente">
     <div class="modal-content">
@@ -118,22 +113,19 @@
     }
 
     function cambiarImagen(idProd, nuevaUrl) {
-        const imgPrincipal = document.getElementById(`main-img-${idProd}`);
-        imgPrincipal.src = nuevaUrl;
-        // Actualizamos el evento onclick para que el zoom sea de la foto nueva
-        imgPrincipal.parentElement.onclick = () => abrirZoom(nuevaUrl);
+        const img = document.getElementById(`main-img-${idProd}`);
+        img.src = nuevaUrl;
+        img.parentElement.onclick = () => abrirZoom(nuevaUrl); // Actualizar zoom
     }
 
     function renderizar(lista) {
         const contenedor = document.getElementById('catalogo');
-        if(lista.length === 0) {
-            contenedor.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No hay prendas aquí.</p>';
-            return;
-        }
+        if(lista.length === 0) { contenedor.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No hay prendas aquí.</p>'; return; }
+        
         contenedor.innerHTML = lista.map(p => {
-            // Procesar fotos extra
-            const extras = p.fotos_extra ? p.fotos_extra.split(',') : [];
-            const todasLasFotos = [p.imagen_url, ...extras].filter(url => url.trim() !== "");
+            // Manejo de fotos extra
+            const fotosExtra = p.fotos_extra ? p.fotos_extra.split(',').map(f => f.trim()).filter(f => f !== "") : [];
+            const todasLasFotos = [p.imagen_url, ...fotosExtra];
 
             return `
             <div class="product-card">
@@ -143,9 +135,7 @@
                 
                 ${todasLasFotos.length > 1 ? `
                 <div class="mini-gal">
-                    ${todasLasFotos.map(url => `
-                        <img src="${url.trim()}" onclick="event.stopPropagation(); cambiarImagen('${p.id}', '${url.trim()}')">
-                    `).join('')}
+                    ${todasLasFotos.map(foto => `<img src="${foto}" onclick="event.stopPropagation(); cambiarImagen('${p.id}', '${foto}')">`).join('')}
                 </div>` : ''}
 
                 <div class="info">
@@ -164,16 +154,18 @@
                             ${p.marca_detalle ? p.marca_detalle.split(',').map(c => `<option>${c.trim()}</option>`).join('') : '<option>Único</option>'}
                         </select>
                     </div>
-                    <button class="btn-add" onclick="agregarAlCarrito('${p.id}', '${p.nombre}', '${p.categoria}')">Agregar al Carrito</button>
+                    <button class="btn-add" onclick="agregarAlCarrito('${p.id}', '${p.nombre}', '${p.categoria}', '${p.imagen_url}')">Agregar al Carrito</button>
                 </div>
             </div>`;
         }).join('');
     }
 
-    function agregarAlCarrito(id, nombre, precioVenta) {
+    function agregarAlCarrito(id, nombre, precioVenta, foto) {
         const talle = document.getElementById(`talle-${id}`).value;
         const color = document.getElementById(`color-${id}`).value;
-        carrito.push({ nombre, precioVenta, talle, color });
+        // Guardamos la foto también
+        carrito.push({ nombre, precioVenta, talle, color, foto });
+        
         document.getElementById('cart-float').style.display = 'block';
         document.getElementById('cart-count').innerText = carrito.length;
         alert("¡" + nombre + " agregado!");
@@ -183,7 +175,10 @@
         const resumen = document.getElementById('resumen-carrito');
         resumen.innerHTML = carrito.map((i, index) => `
             <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                <span>${i.nombre}<br><small>Talle: ${i.talle} | Color: ${i.color}</small></span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="${i.foto}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                    <span>${i.nombre}<br><small>${i.talle} / ${i.color}</small></span>
+                </div>
                 <b>${i.precioVenta}</b>
             </div>`).join('');
         document.getElementById('modal-cliente').style.display = 'flex';
@@ -196,19 +191,27 @@
         if (!cliente) return alert("Por favor, poné tu nombre");
 
         let textoWhatsApp = `¡Hola! Soy *${cliente}*, quiero estos productos:\n\n`;
+        // Preparamos los links de fotos para guardarlos
+        let linksFotos = carrito.map(i => i.foto).join(',');
+
         carrito.forEach((item, idx) => {
             textoWhatsApp += `${idx+1}. ${item.nombre} (Talle: ${item.talle}, Color: ${item.color}) - ${item.precioVenta}\n`;
         });
 
+        // Insertar en Supabase incluyendo la columna fotos_pedido
         const { error } = await supabaseClient.from('pedidos').insert([{ 
-            cliente, detalles: textoWhatsApp, total: carrito.length + " items", estado: "NUEVO"
+            cliente, 
+            detalles: textoWhatsApp, 
+            total: carrito.length + " items", 
+            estado: "NUEVO",
+            fotos_pedido: linksFotos 
         }]);
 
         if(!error) {
             window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(textoWhatsApp)}`, '_blank');
             location.reload();
         } else {
-            alert("Error al procesar. Reintentá.");
+            alert("Error al procesar el pedido: " + error.message);
         }
     }
     cargarProductos();
