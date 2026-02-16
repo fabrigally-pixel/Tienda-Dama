@@ -26,6 +26,10 @@
         .update-box { background: #fff3cd; padding: 15px; border-radius: 15px; border: 1px dashed #ffc107; margin-bottom: 20px; text-align:center; }
         .btn-import { background: #2196f3; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
         .btn-update { background: #ffc107; color: #333; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
+
+        /* Buscador y Filtros */
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #eee; }
+        .filter-bar input, .filter-bar select { margin: 0; padding: 8px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -41,12 +45,10 @@
     <div class="card update-box">
         <h3 style="margin:0 0 5px 0; color:#d39e00;">🔄 Actualizador de Precios</h3>
         <p style="font-size:12px; margin:0 0 10px 0;">Actualiza el costo desde Blink y aplica este porcentaje:</p>
-        
         <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px;">
             <label style="margin:0;">% Ganancia:</label>
             <input type="number" id="update_pct" value="80" style="width:80px; text-align:center; margin:0;">
         </div>
-
         <button class="btn-update" onclick="actualizarPreciosMasivo()">ACTUALIZAR TODO AHORA</button>
         <p id="update-msg" style="display:none; font-size:12px; font-weight:bold; margin-top:5px;"></p>
     </div>
@@ -62,9 +64,7 @@
     <div class="card">
         <h2 id="form-title" style="margin:0; color:#d4a373;">Cargar Prenda</h2>
         <input type="hidden" id="edit-id">
-        
-        <label>Link Original (Para actualizar precios)</label>
-        <input type="text" id="link_origen" placeholder="Se llena solo al importar o pegalo acá">
+        <label>Link Original</label><input type="text" id="link_origen" placeholder="Se llena solo al importar o pegalo acá">
 
         <label>Categoría</label>
         <select id="categoria-prenda">
@@ -74,24 +74,35 @@
         <label>Nombre</label><input type="text" id="nombre">
         <label>Talles (S, M, L)</label><input type="text" id="talles">
         <label>Colores (Blanco, Negro)</label><input type="text" id="colores">
-        <label>Descripción / Tabla de Talles</label><textarea id="tabla_talles_text"></textarea>
+        <label>Descripción / Tabla Talles</label><textarea id="tabla_talles_text"></textarea>
         <label>Foto Principal</label><input type="text" id="img_url">
         <label>Fotos Extra</label><textarea id="links_fotos_extra"></textarea>
-        
         <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
-        
-        <label>Ganancia %</label>
-        <input type="number" id="porcentaje" value="80" oninput="calcularVenta()">
-        
+        <label>Ganancia %</label><input type="number" id="porcentaje" value="80" oninput="calcularVenta()">
         <div style="background:#eee; padding:10px; border-radius:10px; margin-top:10px; text-align:center;">
             Precio Final: <b id="precio_final" style="font-size:20px;">$0</b>
             <input type="hidden" id="precio_venta"> 
         </div>
-
         <button id="btn-action" onclick="guardarProducto()" class="btn-main">Publicar Producto</button>
         <button id="btn-cancel" onclick="location.reload()" style="display:none; width:100%; background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancelar Edición</button>
     </div>
-    <div class="card"><h3>Stock Actual</h3><div id="lista-productos"></div></div>
+    
+    <div class="card">
+        <h3>Stock Actual</h3>
+        
+        <div class="filter-bar">
+            <input type="text" id="busqueda" placeholder="🔍 Buscar nombre..." oninput="filtrarStock()" style="flex:1;">
+            <select id="filtro-categoria" onchange="filtrarStock()" style="flex:1;">
+                <option value="Todo">Todas las Categorías</option>
+                <option>Camisas</option><option>Pantalones</option><option>Remeras & Tops</option>
+                <option>Sweaters & Buzos</option><option>Blazers & Camperas</option>
+                <option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option>
+            </select>
+        </div>
+        <p id="contador-stock" style="font-size:12px; color:#666; margin-top:0; text-align:right;">Cargando...</p>
+
+        <div id="lista-productos"></div>
+    </div>
 </div>
 
 <div id="sec-pedidos" class="section"><div id="lista-pedidos"></div></div>
@@ -104,11 +115,46 @@
     
     let globalProductos = [];
 
+    // --- FILTRADO DE STOCK ---
+    function filtrarStock() {
+        const busqueda = document.getElementById('busqueda').value.toLowerCase();
+        const cat = document.getElementById('filtro-categoria').value;
+
+        const filtrados = globalProductos.filter(p => {
+            const coincideNombre = p.nombre.toLowerCase().includes(busqueda);
+            const coincideCat = (cat === "Todo") || (p.marca === cat);
+            return coincideNombre && coincideCat;
+        });
+
+        renderizarStock(filtrados);
+    }
+
+    function renderizarStock(lista) {
+        document.getElementById('contador-stock').innerText = `Viendo ${lista.length} de ${globalProductos.length} productos`;
+        
+        const contenedor = document.getElementById('lista-productos');
+        if(lista.length === 0) {
+            contenedor.innerHTML = '<p style="text-align:center; color:#999;">No se encontraron productos.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = lista.map(p => `
+            <div class="prod-item">
+                <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
+                <div style="flex-grow:1; font-size:13px;">
+                    <b>${p.nombre}</b><br>
+                    <small style="color:${p.link_origen ? 'green' : 'red'}">${p.link_origen ? '⚡ Conectado' : '⚠️ Manual'}</small>
+                    <br><small style="color:#888">${p.marca}</small>
+                </div>
+                <button onclick="prepararEdicion('${p.id}')">✏️</button>
+                <button onclick="eliminar('${p.id}')">🗑️</button>
+            </div>`).join('');
+    }
+
     // --- ACTUALIZADOR MASIVO ---
     async function actualizarPreciosMasivo() {
         const pctUsuario = parseFloat(document.getElementById('update_pct').value) || 80;
-        
-        if(!confirm(`¿Actualizar todos los precios usando un ${pctUsuario}% de ganancia sobre el costo actual de Blink?`)) return;
+        if(!confirm(`¿Actualizar precios usando ${pctUsuario}% de ganancia?`)) return;
         
         const msg = document.getElementById('update-msg');
         msg.style.display = 'block';
@@ -116,48 +162,28 @@
         
         const { data: prods } = await supabaseClient.from('productos').select('*').not('link_origen', 'is', null);
         
-        if(!prods || prods.length === 0) {
-            msg.innerText = "No hay productos con link para actualizar.";
-            return;
-        }
-
         let actualizados = 0;
-        let errores = 0;
-
         for (let p of prods) {
             try {
                 if(!p.link_origen.includes('http')) continue;
-                
                 let cleanUrl = p.link_origen.split('?')[0];
                 if(!cleanUrl.endsWith('.json')) cleanUrl += '.json';
 
                 const response = await fetch(cleanUrl);
-                if(!response.ok) throw new Error("Error red");
                 const jsonData = await response.json();
-                
                 const nuevoCosto = parseFloat(jsonData.product.variants[0].price);
-                
-                // USAMOS EL PORCENTAJE DEL INPUT
                 const multiplicador = 1 + (pctUsuario / 100);
                 const nuevoTotal = Math.round(nuevoCosto * multiplicador); 
                 const nuevoPrecioTexto = "$" + nuevoTotal.toLocaleString();
 
                 if(p.precio_costo !== nuevoCosto || p.categoria !== nuevoPrecioTexto) {
-                    await supabaseClient.from('productos').update({
-                        precio_costo: nuevoCosto,
-                        categoria: nuevoPrecioTexto
-                    }).eq('id', p.id);
+                    await supabaseClient.from('productos').update({ precio_costo: nuevoCosto, categoria: nuevoPrecioTexto }).eq('id', p.id);
                     actualizados++;
-                    msg.innerText = `Actualizando... (${actualizados}/${prods.length})`;
+                    msg.innerText = `Actualizando... (${actualizados})`;
                 }
-
-            } catch (e) {
-                console.error("Error en " + p.nombre, e);
-                errores++;
-            }
+            } catch (e) { console.error(e); }
         }
-        
-        msg.innerText = `Fin! Actualizados: ${actualizados}. Errores/Sin cambios: ${errores}.`;
+        msg.innerText = `Fin! Actualizados: ${actualizados}.`;
         setTimeout(() => location.reload(), 2000);
     }
 
@@ -165,7 +191,6 @@
     async function importarDeBlink() {
         let url = document.getElementById('link_blink_input').value;
         if (!url) return alert("Pegá un link primero");
-        
         document.getElementById('link_origen').value = url;
 
         url = url.split('?')[0];
@@ -179,23 +204,18 @@
 
             document.getElementById('nombre').value = product.title;
             if (product.image) document.getElementById('img_url').value = product.image.src;
-            if (product.images && product.images.length > 1) {
-                document.getElementById('links_fotos_extra').value = product.images.slice(1).map(i => i.src).join(', ');
-            }
+            if (product.images && product.images.length > 1) document.getElementById('links_fotos_extra').value = product.images.slice(1).map(i => i.src).join(', ');
             if (product.variants) document.getElementById('costo').value = parseFloat(product.variants[0].price);
             
             if (product.options) {
                 product.options.forEach(opt => {
-                    if (opt.name.toLowerCase().includes('size') || opt.name.toLowerCase().includes('talle')) 
-                        document.getElementById('talles').value = opt.values.join(', ');
-                    if (opt.name.toLowerCase().includes('color')) 
-                        document.getElementById('colores').value = opt.values.join(', ');
+                    if (opt.name.toLowerCase().includes('size') || opt.name.toLowerCase().includes('talle')) document.getElementById('talles').value = opt.values.join(', ');
+                    if (opt.name.toLowerCase().includes('color')) document.getElementById('colores').value = opt.values.join(', ');
                 });
             }
 
-            let desc = product.body_html || "";
             let div = document.createElement("div");
-            div.innerHTML = desc;
+            div.innerHTML = product.body_html || "";
             let texto = div.textContent || div.innerText || "";
             if(texto.length > 300) texto = texto.substring(0, 300) + "...";
             document.getElementById('tabla_talles_text').value = texto;
@@ -209,13 +229,10 @@
             else if(title.includes('camisa')) cat.value="Camisas";
             else if(title.includes('remera') || title.includes('top')) cat.value="Remeras & Tops";
             
-            alert("¡Datos traídos! Link guardado.");
+            alert("¡Datos traídos!");
 
-        } catch (error) {
-            alert("Error al importar: " + error.message);
-        } finally {
-            document.getElementById('loading-msg').style.display = 'none';
-        }
+        } catch (error) { alert("Error: " + error.message); } 
+        finally { document.getElementById('loading-msg').style.display = 'none'; }
     }
 
     function switchTab(tab, el) {
@@ -260,16 +277,7 @@
     async function cargarLista() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', {ascending: false});
         globalProductos = data || [];
-        document.getElementById('lista-productos').innerHTML = globalProductos.map(p => `
-            <div class="prod-item">
-                <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
-                <div style="flex-grow:1; font-size:13px;">
-                    <b>${p.nombre}</b><br>
-                    <small style="color:${p.link_origen ? 'green' : 'red'}">${p.link_origen ? '⚡ Conectado' : '⚠️ Manual'}</small>
-                </div>
-                <button onclick="prepararEdicion('${p.id}')">✏️</button>
-                <button onclick="eliminar('${p.id}')">🗑️</button>
-            </div>`).join('');
+        filtrarStock(); // Llamamos al filtro para que renderice
     }
 
     function prepararEdicion(id) {
@@ -285,7 +293,6 @@
         document.getElementById('tabla_talles_text').value = p.tabla_talles || '';
         document.getElementById('costo').value = p.precio_costo;
         document.getElementById('link_origen').value = p.link_origen || '';
-        
         document.getElementById('precio_venta').value = p.categoria;
         document.getElementById('precio_final').innerText = p.categoria;
         document.getElementById('form-title').innerText = "Editando...";
