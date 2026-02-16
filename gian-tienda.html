@@ -20,8 +20,12 @@
         .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .fotos-pedido { display: flex; gap: 5px; overflow-x: auto; margin-top: 10px; padding-bottom: 5px; }
         .fotos-pedido img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
+        
+        /* Importador y Actualizador */
         .import-box { background: #e3f2fd; padding: 15px; border-radius: 15px; border: 1px dashed #2196f3; margin-bottom: 20px; }
+        .update-box { background: #fff3cd; padding: 15px; border-radius: 15px; border: 1px dashed #ffc107; margin-bottom: 20px; text-align:center; }
         .btn-import { background: #2196f3; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
+        .btn-update { background: #ffc107; color: #333; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
     </style>
 </head>
 <body>
@@ -34,17 +38,28 @@
 
 <div id="sec-carga" class="section active">
     
+    <div class="card update-box">
+        <h3 style="margin:0 0 5px 0; color:#d39e00;">🔄 Actualizador de Precios</h3>
+        <p style="font-size:12px; margin:0 0 10px 0;">Revisa el precio de Blink y aplica tu % de ganancia a todos los productos con link.</p>
+        <button class="btn-update" onclick="actualizarPreciosMasivo()">ACTUALIZAR TODO AHORA</button>
+        <p id="update-msg" style="display:none; font-size:12px; font-weight:bold; margin-top:5px;"></p>
+    </div>
+
     <div class="card import-box">
         <h3 style="margin:0 0 10px 0; color:#2196f3;">🪄 Importar desde Blink</h3>
         <label>Pegá el Link del producto aquí:</label>
-        <input type="text" id="link_blink" placeholder="https://blinkba.com/products/...">
-        <button class="btn-import" onclick="importarDeBlink()">Traer Datos Automáticamente</button>
+        <input type="text" id="link_blink_input" placeholder="https://blinkba.com/products/...">
+        <button class="btn-import" onclick="importarDeBlink()">Traer Datos</button>
         <p id="loading-msg" style="display:none; font-size:12px; color:#2196f3; text-align:center;">Buscando datos...</p>
     </div>
 
     <div class="card">
         <h2 id="form-title" style="margin:0; color:#d4a373;">Cargar Prenda</h2>
         <input type="hidden" id="edit-id">
+        
+        <label>Link Original (Para actualizar precios)</label>
+        <input type="text" id="link_origen" placeholder="Se llena solo al importar o pegalo acá">
+
         <label>Categoría</label>
         <select id="categoria-prenda">
             <option>Camisas</option><option>Pantalones</option><option>Remeras & Tops</option><option>Sweaters & Buzos</option>
@@ -53,9 +68,9 @@
         <label>Nombre</label><input type="text" id="nombre">
         <label>Talles (S, M, L)</label><input type="text" id="talles">
         <label>Colores (Blanco, Negro)</label><input type="text" id="colores">
-        <label>Descripción / Tabla de Talles (Texto)</label><textarea id="tabla_talles_text" placeholder="Ej: Medidas del talle S..."></textarea>
-        <label>Foto Principal (Link)</label><input type="text" id="img_url">
-        <label>Fotos Extra (Links separados por coma)</label><textarea id="links_fotos_extra" placeholder="link1, link2..."></textarea>
+        <label>Descripción / Tabla de Talles</label><textarea id="tabla_talles_text"></textarea>
+        <label>Foto Principal</label><input type="text" id="img_url">
+        <label>Fotos Extra</label><textarea id="links_fotos_extra"></textarea>
         
         <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
         
@@ -81,67 +96,122 @@
     const SUPABASE_KEY = "sb_publishable_zjD9Q4lUlodn7XtRwF0W_A_LttLpWGa";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
-    // VARIABLE GLOBAL PARA GUARDAR PRODUCTOS (ESTO EVITA EL ERROR DE EDICIÓN)
     let globalProductos = [];
 
-    // --- IMPORTADOR INTELIGENTE ---
+    // --- ACTUALIZADOR MASIVO ---
+    async function actualizarPreciosMasivo() {
+        if(!confirm("¿Seguro? Esto revisará todos los productos con LINK y actualizará sus precios según el costo actual en Blink y tu 80% de ganancia.")) return;
+        
+        const msg = document.getElementById('update-msg');
+        msg.style.display = 'block';
+        msg.innerText = "Iniciando actualización...";
+        
+        // 1. Traer productos que tengan link
+        const { data: prods } = await supabaseClient.from('productos').select('*').not('link_origen', 'is', null);
+        
+        if(!prods || prods.length === 0) {
+            msg.innerText = "No hay productos con link para actualizar.";
+            return;
+        }
+
+        let actualizados = 0;
+        let errores = 0;
+
+        // 2. Recorrer y actualizar
+        for (let p of prods) {
+            try {
+                if(!p.link_origen.includes('http')) continue;
+                
+                // Limpiar URL y agregar .json
+                let cleanUrl = p.link_origen.split('?')[0];
+                if(!cleanUrl.endsWith('.json')) cleanUrl += '.json';
+
+                const response = await fetch(cleanUrl);
+                if(!response.ok) throw new Error("Error red");
+                const jsonData = await response.json();
+                
+                // Nuevo costo
+                const nuevoCosto = parseFloat(jsonData.product.variants[0].price);
+                
+                // Calcular venta (80% o lo que uses fijo, aquí uso 80 por defecto si queres mantener el del producto habría que guardar el % en la DB)
+                const nuevoTotal = Math.round(nuevoCosto * 1.80); 
+                const nuevoPrecioTexto = "$" + nuevoTotal.toLocaleString();
+
+                // Guardar solo si cambió
+                if(p.precio_costo !== nuevoCosto) {
+                    await supabaseClient.from('productos').update({
+                        precio_costo: nuevoCosto,
+                        categoria: nuevoPrecioTexto // Actualizamos precio venta visual
+                    }).eq('id', p.id);
+                    actualizados++;
+                    msg.innerText = `Actualizando... (${actualizados}/${prods.length})`;
+                }
+
+            } catch (e) {
+                console.error("Error en " + p.nombre, e);
+                errores++;
+            }
+        }
+        
+        msg.innerText = `Fin! Actualizados: ${actualizados}. Errores/Sin cambios: ${errores}.`;
+        setTimeout(() => location.reload(), 2000);
+    }
+
+    // --- IMPORTADOR ---
     async function importarDeBlink() {
-        let url = document.getElementById('link_blink').value;
+        let url = document.getElementById('link_blink_input').value;
         if (!url) return alert("Pegá un link primero");
+        
+        // Guardamos el link en el input para que se guarde en la DB
+        document.getElementById('link_origen').value = url;
+
         url = url.split('?')[0];
         const jsonUrl = url + '.json';
         document.getElementById('loading-msg').style.display = 'block';
 
         try {
             const response = await fetch(jsonUrl);
-            if (!response.ok) throw new Error("No se pudo conectar con Blink");
             const data = await response.json();
             const product = data.product;
 
             document.getElementById('nombre').value = product.title;
-            if (product.image && product.image.src) document.getElementById('img_url').value = product.image.src;
+            if (product.image) document.getElementById('img_url').value = product.image.src;
             if (product.images && product.images.length > 1) {
-                const extras = product.images.slice(1).map(img => img.src).join(', ');
-                document.getElementById('links_fotos_extra').value = extras;
+                document.getElementById('links_fotos_extra').value = product.images.slice(1).map(i => i.src).join(', ');
             }
-            if (product.variants && product.variants.length > 0) {
-                document.getElementById('costo').value = parseFloat(product.variants[0].price);
-            }
+            if (product.variants) document.getElementById('costo').value = parseFloat(product.variants[0].price);
+            
+            // Opciones (Talles/Colores)
             if (product.options) {
                 product.options.forEach(opt => {
-                    if (opt.name.toLowerCase().includes('talle') || opt.name.toLowerCase().includes('size')) {
+                    if (opt.name.toLowerCase().includes('size') || opt.name.toLowerCase().includes('talle')) 
                         document.getElementById('talles').value = opt.values.join(', ');
-                    }
-                    if (opt.name.toLowerCase().includes('color')) {
+                    if (opt.name.toLowerCase().includes('color')) 
                         document.getElementById('colores').value = opt.values.join(', ');
-                    }
                 });
             }
-            let desc = product.body_html || "";
+
+            // Descripcion
             let div = document.createElement("div");
-            div.innerHTML = desc;
-            let textoLimpio = div.textContent || div.innerText || "";
-            if(textoLimpio.length > 300) textoLimpio = textoLimpio.substring(0, 300) + "...";
-            document.getElementById('tabla_talles_text').value = textoLimpio;
+            div.innerHTML = product.body_html;
+            let texto = div.textContent || div.innerText || "";
+            if(texto.length > 300) texto = texto.substring(0, 300) + "...";
+            document.getElementById('tabla_talles_text').value = texto;
 
             calcularVenta();
+            
+            // Categoría simple
+            const title = product.title.toLowerCase();
+            const cat = document.getElementById('categoria-prenda');
+            if(title.includes('short')) cat.value="Shorts & Polleras";
+            else if(title.includes('jean') || title.includes('pantalon')) cat.value="Pantalones";
+            else if(title.includes('camisa')) cat.value="Camisas";
+            else if(title.includes('remera') || title.includes('top')) cat.value="Remeras & Tops";
+            
+            alert("¡Datos traídos! El link también se guardará para futuras actualizaciones.");
 
-            const catSelect = document.getElementById('categoria-prenda');
-            const tituloLower = product.title.toLowerCase();
-            const tipoLower = (product.product_type || "").toLowerCase();
-
-            if(tituloLower.includes('short') || tipoLower.includes('short')) catSelect.value = "Shorts & Polleras";
-            else if(tituloLower.includes('jean') || tituloLower.includes('pantal')) catSelect.value = "Pantalones";
-            else if(tituloLower.includes('camisa')) catSelect.value = "Camisas";
-            else if(tituloLower.includes('top') || tituloLower.includes('remera')) catSelect.value = "Remeras & Tops";
-            else if(tituloLower.includes('vestido') || tituloLower.includes('mono')) catSelect.value = "Monos & Vestidos";
-            else if(tituloLower.includes('buzo') || tituloLower.includes('sweater')) catSelect.value = "Sweaters & Buzos";
-            else if(tituloLower.includes('blazer') || tituloLower.includes('campera')) catSelect.value = "Blazers & Camperas";
-
-            alert("¡Datos importados! Revisá y dale a Publicar.");
         } catch (error) {
-            console.error(error);
-            alert("No funcionó la importación automática. Probá carga manual.");
+            alert("Error al importar: " + error.message);
         } finally {
             document.getElementById('loading-msg').style.display = 'none';
         }
@@ -178,7 +248,8 @@
             marca_detalle: document.getElementById('colores').value,
             tabla_talles: document.getElementById('tabla_talles_text').value,
             fotos_extra: document.getElementById('links_fotos_extra').value,
-            marca: document.getElementById('categoria-prenda').value
+            marca: document.getElementById('categoria-prenda').value,
+            link_origen: document.getElementById('link_origen').value // Guardamos el link
         };
 
         const { error } = id ? await supabaseClient.from('productos').update(datos).eq('id', id) : await supabaseClient.from('productos').insert([datos]);
@@ -187,22 +258,22 @@
 
     async function cargarLista() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', {ascending: false});
-        globalProductos = data || []; // Guardamos en memoria global
-        
+        globalProductos = data || [];
         document.getElementById('lista-productos').innerHTML = globalProductos.map(p => `
             <div class="prod-item">
                 <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
-                <div style="flex-grow:1; font-size:13px;"><b>${p.nombre}</b><br><small>${p.marca}</small></div>
+                <div style="flex-grow:1; font-size:13px;">
+                    <b>${p.nombre}</b><br>
+                    <small style="color:${p.link_origen ? 'green' : 'red'}">${p.link_origen ? '⚡ Link Conectado' : '⚠️ Sin Link (Manual)'}</small>
+                </div>
                 <button onclick="prepararEdicion('${p.id}')">✏️</button>
                 <button onclick="eliminar('${p.id}')">🗑️</button>
             </div>`).join('');
     }
 
-    // Esta función busca el producto en la memoria y llena el formulario
     function prepararEdicion(id) {
         const p = globalProductos.find(x => x.id == id);
         if (!p) return;
-
         document.getElementById('edit-id').value = p.id;
         document.getElementById('nombre').value = p.nombre;
         document.getElementById('categoria-prenda').value = p.marca;
@@ -212,11 +283,12 @@
         document.getElementById('links_fotos_extra').value = p.fotos_extra || '';
         document.getElementById('tabla_talles_text').value = p.tabla_talles || '';
         document.getElementById('costo').value = p.precio_costo;
+        document.getElementById('link_origen').value = p.link_origen || ''; // Cargamos el link si existe
+        
         document.getElementById('precio_venta').value = p.categoria;
         document.getElementById('precio_final').innerText = p.categoria;
-
-        document.getElementById('form-title').innerText = "Editando Producto";
-        document.getElementById('btn-action').innerText = "Guardar Cambios";
+        document.getElementById('form-title').innerText = "Editando...";
+        document.getElementById('btn-action').innerText = "Actualizar";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
     }
