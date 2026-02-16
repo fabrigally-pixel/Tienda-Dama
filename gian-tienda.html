@@ -40,7 +40,13 @@
     
     <div class="card update-box">
         <h3 style="margin:0 0 5px 0; color:#d39e00;">🔄 Actualizador de Precios</h3>
-        <p style="font-size:12px; margin:0 0 10px 0;">Revisa el precio de Blink y aplica tu % de ganancia a todos los productos con link.</p>
+        <p style="font-size:12px; margin:0 0 10px 0;">Actualiza el costo desde Blink y aplica este porcentaje:</p>
+        
+        <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px;">
+            <label style="margin:0;">% Ganancia:</label>
+            <input type="number" id="update_pct" value="80" style="width:80px; text-align:center; margin:0;">
+        </div>
+
         <button class="btn-update" onclick="actualizarPreciosMasivo()">ACTUALIZAR TODO AHORA</button>
         <p id="update-msg" style="display:none; font-size:12px; font-weight:bold; margin-top:5px;"></p>
     </div>
@@ -100,13 +106,14 @@
 
     // --- ACTUALIZADOR MASIVO ---
     async function actualizarPreciosMasivo() {
-        if(!confirm("¿Seguro? Esto revisará todos los productos con LINK y actualizará sus precios según el costo actual en Blink y tu 80% de ganancia.")) return;
+        const pctUsuario = parseFloat(document.getElementById('update_pct').value) || 80;
+        
+        if(!confirm(`¿Actualizar todos los precios usando un ${pctUsuario}% de ganancia sobre el costo actual de Blink?`)) return;
         
         const msg = document.getElementById('update-msg');
         msg.style.display = 'block';
         msg.innerText = "Iniciando actualización...";
         
-        // 1. Traer productos que tengan link
         const { data: prods } = await supabaseClient.from('productos').select('*').not('link_origen', 'is', null);
         
         if(!prods || prods.length === 0) {
@@ -117,12 +124,10 @@
         let actualizados = 0;
         let errores = 0;
 
-        // 2. Recorrer y actualizar
         for (let p of prods) {
             try {
                 if(!p.link_origen.includes('http')) continue;
                 
-                // Limpiar URL y agregar .json
                 let cleanUrl = p.link_origen.split('?')[0];
                 if(!cleanUrl.endsWith('.json')) cleanUrl += '.json';
 
@@ -130,18 +135,17 @@
                 if(!response.ok) throw new Error("Error red");
                 const jsonData = await response.json();
                 
-                // Nuevo costo
                 const nuevoCosto = parseFloat(jsonData.product.variants[0].price);
                 
-                // Calcular venta (80% o lo que uses fijo, aquí uso 80 por defecto si queres mantener el del producto habría que guardar el % en la DB)
-                const nuevoTotal = Math.round(nuevoCosto * 1.80); 
+                // USAMOS EL PORCENTAJE DEL INPUT
+                const multiplicador = 1 + (pctUsuario / 100);
+                const nuevoTotal = Math.round(nuevoCosto * multiplicador); 
                 const nuevoPrecioTexto = "$" + nuevoTotal.toLocaleString();
 
-                // Guardar solo si cambió
-                if(p.precio_costo !== nuevoCosto) {
+                if(p.precio_costo !== nuevoCosto || p.categoria !== nuevoPrecioTexto) {
                     await supabaseClient.from('productos').update({
                         precio_costo: nuevoCosto,
-                        categoria: nuevoPrecioTexto // Actualizamos precio venta visual
+                        categoria: nuevoPrecioTexto
                     }).eq('id', p.id);
                     actualizados++;
                     msg.innerText = `Actualizando... (${actualizados}/${prods.length})`;
@@ -162,7 +166,6 @@
         let url = document.getElementById('link_blink_input').value;
         if (!url) return alert("Pegá un link primero");
         
-        // Guardamos el link en el input para que se guarde en la DB
         document.getElementById('link_origen').value = url;
 
         url = url.split('?')[0];
@@ -181,7 +184,6 @@
             }
             if (product.variants) document.getElementById('costo').value = parseFloat(product.variants[0].price);
             
-            // Opciones (Talles/Colores)
             if (product.options) {
                 product.options.forEach(opt => {
                     if (opt.name.toLowerCase().includes('size') || opt.name.toLowerCase().includes('talle')) 
@@ -191,16 +193,15 @@
                 });
             }
 
-            // Descripcion
+            let desc = product.body_html || "";
             let div = document.createElement("div");
-            div.innerHTML = product.body_html;
+            div.innerHTML = desc;
             let texto = div.textContent || div.innerText || "";
             if(texto.length > 300) texto = texto.substring(0, 300) + "...";
             document.getElementById('tabla_talles_text').value = texto;
 
             calcularVenta();
             
-            // Categoría simple
             const title = product.title.toLowerCase();
             const cat = document.getElementById('categoria-prenda');
             if(title.includes('short')) cat.value="Shorts & Polleras";
@@ -208,7 +209,7 @@
             else if(title.includes('camisa')) cat.value="Camisas";
             else if(title.includes('remera') || title.includes('top')) cat.value="Remeras & Tops";
             
-            alert("¡Datos traídos! El link también se guardará para futuras actualizaciones.");
+            alert("¡Datos traídos! Link guardado.");
 
         } catch (error) {
             alert("Error al importar: " + error.message);
@@ -249,7 +250,7 @@
             tabla_talles: document.getElementById('tabla_talles_text').value,
             fotos_extra: document.getElementById('links_fotos_extra').value,
             marca: document.getElementById('categoria-prenda').value,
-            link_origen: document.getElementById('link_origen').value // Guardamos el link
+            link_origen: document.getElementById('link_origen').value
         };
 
         const { error } = id ? await supabaseClient.from('productos').update(datos).eq('id', id) : await supabaseClient.from('productos').insert([datos]);
@@ -264,7 +265,7 @@
                 <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
                 <div style="flex-grow:1; font-size:13px;">
                     <b>${p.nombre}</b><br>
-                    <small style="color:${p.link_origen ? 'green' : 'red'}">${p.link_origen ? '⚡ Link Conectado' : '⚠️ Sin Link (Manual)'}</small>
+                    <small style="color:${p.link_origen ? 'green' : 'red'}">${p.link_origen ? '⚡ Conectado' : '⚠️ Manual'}</small>
                 </div>
                 <button onclick="prepararEdicion('${p.id}')">✏️</button>
                 <button onclick="eliminar('${p.id}')">🗑️</button>
@@ -283,7 +284,7 @@
         document.getElementById('links_fotos_extra').value = p.fotos_extra || '';
         document.getElementById('tabla_talles_text').value = p.tabla_talles || '';
         document.getElementById('costo').value = p.precio_costo;
-        document.getElementById('link_origen').value = p.link_origen || ''; // Cargamos el link si existe
+        document.getElementById('link_origen').value = p.link_origen || '';
         
         document.getElementById('precio_venta').value = p.categoria;
         document.getElementById('precio_final').innerText = p.categoria;
