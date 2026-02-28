@@ -19,34 +19,27 @@
         
         body { font-family: 'Playfair Display', serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 100px; }
         
-        header { background: white; padding: 40px 20px; text-align: center; border-bottom: 1px solid #f0e4d7; }
+        header { background: white; padding: 50px 20px; text-align: center; border-bottom: 1px solid #f0e4d7; }
         
-        /* Logo OSO - TAMAÑO GRANDE (220px) */
+        /* Logo OSO - TAMAÑO XL */
         .logo-bear { 
-            width: 220px; 
+            width: 300px; /* Tamaño aumentado para que se vea bien grande */
+            max-width: 90%; /* Para que no se salga de pantalla en celulares chicos */
             height: auto;
             display: block; 
-            margin: 0 auto 20px auto; 
-            filter: drop-shadow(0 4px 6px rgba(197, 160, 89, 0.2));
+            margin: 0 auto 15px auto; 
+            filter: drop-shadow(0 5px 10px rgba(197, 160, 89, 0.25));
         }
 
-        /* Título ÚRSULA */
-        header h1 { 
-            margin: 0; 
-            color: var(--accent); 
-            letter-spacing: 8px; 
-            font-size: 3em; 
-            font-family: 'Cinzel', serif; 
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
+        /* Subtítulo debajo del oso */
         header p { 
-            font-style: italic; 
-            color: #999; 
-            margin-top: 10px; 
-            font-size: 1.1em;
-            letter-spacing: 1px;
+            font-family: 'Cinzel', serif; /* Cambié a Cinzel para que se vea más marca */
+            font-weight: 600;
+            color: var(--accent); 
+            margin-top: 5px; 
+            font-size: 1.3em;
+            letter-spacing: 4px;
+            text-transform: uppercase;
         }
         
         /* Barra de Categorías */
@@ -99,7 +92,6 @@
 <header>
     <img src="https://hnnixqelbkuyfplnncci.supabase.co/storage/v1/object/public/imagenes/IMG-20260227-WA0059.jpg" class="logo-bear" alt="Logo Úrsula">
     
-    <h1>ÚRSULA</h1>
     <p>Indumentaria & Estilo</p>
 </header>
 
@@ -222,7 +214,6 @@
         document.getElementById('cart-float').style.display = 'block';
         document.getElementById('cart-count').innerText = carrito.length;
         
-        // Animación de botón
         const btn = event.target;
         const originalText = btn.innerText;
         btn.innerText = "¡AGREGADO!";
@@ -283,7 +274,7 @@
             cliente, 
             detalles: textoWhatsApp, 
             total: carrito.length + " items", 
-            estado: "NUEVO",
+            estado: "NUEVO", 
             fotos_pedido: linksFotos 
         }]);
 
