@@ -33,12 +33,13 @@
             font-size: 0; 
         }
         
-        /* Logo Nuevo: Estilo Portada Fija */
+        /* Logo Nuevo: Estilo Banner que se adapta 100% sin recortar */
         .logo-main { 
             width: 100%; 
-            height: 280px; /* Alto fijo y elegante para la compu */
-            object-fit: cover; /* Recorta los bordes superior/inferior sobrantes sin deformar la imagen */
-            object-position: center; /* Obliga a que el texto siempre quede centrado */
+            height: auto; /* Permite que la imagen crezca a lo alto de forma natural según el ancho */
+            max-height: 450px; /* Un tope de seguridad para pantallas gigantes */
+            object-fit: cover; 
+            object-position: center; 
             display: block; 
             margin: 0;
             border-radius: 0;
@@ -94,7 +95,8 @@
 
         /* Ajustes específicos para el celular */
         @media (max-width: 600px) {
-            .logo-main { height: 180px; } /* Banner más corto en móviles */
+            /* En móvil le damos un mínimo de alto para que no quede demasiado chatita la foto */
+            .logo-main { min-height: 120px; }
             .container { grid-template-columns: 1fr; gap: 25px; }
             .img-container { height: 350px; }
             .social-btn { width: 100%; justify-content: center; }
@@ -105,7 +107,8 @@
 <body>
 
 <header>
-    <img src="https://i.postimg.cc/VkP916Db/1.jpg" class="logo-main" alt="Úrsula Indumentaria">
+    <!-- Tu nuevo fondo alargado cargado -->
+    <img src="https://i.postimg.cc/0y7T2zvW/fondo-tienda.jpg" class="logo-main" alt="Úrsula Indumentaria">
 </header>
 
 <div class="category-bar" id="category-bar"></div>
