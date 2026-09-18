@@ -3,33 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - SHOWROOM</title>
+    <title>Admin - ÚRSULA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #fdf6f0; padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #fff0f5; padding: 20px; margin: 0; display: flex; flex-direction: column; align-items: center; }
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; width: 100%; max-width: 500px; }
         .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; background: #e0e0e0; font-weight: bold; }
-        .tab-btn.active { background: #d4a373; color: white; }
+        .tab-btn.active { background: #d32f2f; color: white; }
         .section { display: none; width: 100%; max-width: 500px; }
         .section.active { display: block; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #f0e4d7; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
-        label { display: block; margin-top: 10px; font-weight: 600; color: #777; font-size: 11px; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #f0e4d7; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; background:#d4a373; color:white; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #f8c8d8; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+        label { display: block; margin-top: 15px; font-weight: 600; color: #555; font-size: 12px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #f8c8d8; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #fffcfd; }
+        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 20px; background:#d32f2f; color:white; font-size: 16px; }
         .prod-item { display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee; padding:10px 0; }
-        .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d4a373; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .order-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 5px solid #d32f2f; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .fotos-pedido { display: flex; gap: 5px; overflow-x: auto; margin-top: 10px; padding-bottom: 5px; }
         .fotos-pedido img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
-        
-        /* Importador y Actualizador */
-        .import-box { background: #e3f2fd; padding: 15px; border-radius: 15px; border: 1px dashed #2196f3; margin-bottom: 20px; }
-        .update-box { background: #fff3cd; padding: 15px; border-radius: 15px; border: 1px dashed #ffc107; margin-bottom: 20px; text-align:center; }
-        .btn-import { background: #2196f3; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
-        .btn-update { background: #ffc107; color: #333; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px;}
-
-        /* Buscador y Filtros */
         .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #eee; }
         .filter-bar input, .filter-bar select { margin: 0; padding: 8px; font-size: 14px; }
+        .help-text { font-size: 11px; color: #888; margin-top: -3px; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -42,65 +35,52 @@
 
 <div id="sec-carga" class="section active">
     
-    <div class="card update-box">
-        <h3 style="margin:0 0 5px 0; color:#d39e00;">🔄 Actualizador de Precios</h3>
-        <p style="font-size:12px; margin:0 0 10px 0;">Actualiza el costo desde Blink y aplica este porcentaje:</p>
-        <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px;">
-            <label style="margin:0;">% Ganancia:</label>
-            <input type="number" id="update_pct" value="80" style="width:80px; text-align:center; margin:0;">
-        </div>
-        <button class="btn-update" onclick="actualizarPreciosMasivo()">ACTUALIZAR TODO AHORA</button>
-        <p id="update-msg" style="display:none; font-size:12px; font-weight:bold; margin-top:5px;"></p>
-    </div>
-
-    <div class="card import-box">
-        <h3 style="margin:0 0 10px 0; color:#2196f3;">🪄 Importar desde Blink</h3>
-        <label>Pegá el Link del producto aquí:</label>
-        <input type="text" id="link_blink_input" placeholder="https://blinkba.com/products/...">
-        <button class="btn-import" onclick="importarDeBlink()">Traer Datos</button>
-        <p id="loading-msg" style="display:none; font-size:12px; color:#2196f3; text-align:center;">Buscando datos...</p>
-    </div>
-
     <div class="card">
-        <h2 id="form-title" style="margin:0; color:#d4a373;">Cargar Prenda</h2>
+        <h2 id="form-title" style="margin:0; color:#d32f2f;">Cargar Nueva Prenda</h2>
         <input type="hidden" id="edit-id">
-        <label>Link Original</label><input type="text" id="link_origen" placeholder="Se llena solo al importar o pegalo acá">
 
         <label>Categoría</label>
         <select id="categoria-prenda">
-            <option>Camisas</option><option>Pantalones</option><option>Remeras & Tops</option><option>Sweaters & Buzos</option>
-            <option>Blazers & Camperas</option><option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option>
+            <option>Remeras & Tops</option><option>Camisas</option><option>Pantalones</option>
+            <option>Sweaters & Buzos</option><option>Blazers & Camperas</option>
+            <option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option>
         </select>
-        <label>Nombre</label><input type="text" id="nombre">
-        <label>Talles (S, M, L)</label><input type="text" id="talles">
-        <label>Colores (Blanco, Negro)</label><input type="text" id="colores">
-        <label>Descripción / Tabla Talles</label><textarea id="tabla_talles_text"></textarea>
-        <label>Foto Principal</label><input type="text" id="img_url">
-        <label>Fotos Extra</label><textarea id="links_fotos_extra"></textarea>
-        <label>Costo ($)</label><input type="number" id="costo" oninput="calcularVenta()">
-        <label>Ganancia %</label><input type="number" id="porcentaje" value="80" oninput="calcularVenta()">
-        <div style="background:#eee; padding:10px; border-radius:10px; margin-top:10px; text-align:center;">
-            Precio Final: <b id="precio_final" style="font-size:20px;">$0</b>
-            <input type="hidden" id="precio_venta"> 
-        </div>
-        <button id="btn-action" onclick="guardarProducto()" class="btn-main">Publicar Producto</button>
-        <button id="btn-cancel" onclick="location.reload()" style="display:none; width:100%; background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancelar Edición</button>
+        
+        <label>Nombre de la prenda</label>
+        <input type="text" id="nombre" placeholder="Ej: Remera Lisa Algodón">
+        
+        <label>Precio de Venta ($)</label>
+        <input type="number" id="precio_final" placeholder="Ej: 15000">
+
+        <label>Enlace de la Foto Principal</label>
+        <span class="help-text">Subí tu foto a postimages.org y pegá acá el "Enlace directo"</span>
+        <input type="text" id="img_url" placeholder="https://i.postimg.cc/...">
+
+        <label>Talles Disponibles</label>
+        <input type="text" id="talles" placeholder="Ej: S, M, L (Separados por coma)">
+        
+        <label>Colores</label>
+        <input type="text" id="colores" placeholder="Ej: Blanco, Negro, Rojo">
+        
+        <label>Descripción Extra / Info de Talles</label>
+        <textarea id="tabla_talles_text" placeholder="Medidas o detalles de la tela..."></textarea>
+        
+        <button id="btn-action" onclick="guardarProducto()" class="btn-main">Guardar Prenda</button>
+        <button id="btn-cancel" onclick="location.reload()" style="display:none; width:100%; background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancelar Edición</button>
     </div>
     
     <div class="card">
-        <h3>Stock Actual</h3>
-        
+        <h3>Tu Stock Cargado</h3>
         <div class="filter-bar">
-            <input type="text" id="busqueda" placeholder="🔍 Buscar nombre..." oninput="filtrarStock()" style="flex:1;">
+            <input type="text" id="busqueda" placeholder="🔍 Buscar..." oninput="filtrarStock()" style="flex:1;">
             <select id="filtro-categoria" onchange="filtrarStock()" style="flex:1;">
-                <option value="Todo">Todas las Categorías</option>
-                <option>Camisas</option><option>Pantalones</option><option>Remeras & Tops</option>
+                <option value="Todo">Categorías</option>
+                <option>Remeras & Tops</option><option>Camisas</option><option>Pantalones</option>
                 <option>Sweaters & Buzos</option><option>Blazers & Camperas</option>
                 <option>Shorts & Polleras</option><option>Monos & Vestidos</option><option>Blusas</option>
             </select>
         </div>
         <p id="contador-stock" style="font-size:12px; color:#666; margin-top:0; text-align:right;">Cargando...</p>
-
         <div id="lista-productos"></div>
     </div>
 </div>
@@ -115,160 +95,54 @@
     
     let globalProductos = [];
 
-    // --- FILTRADO DE STOCK ---
     function filtrarStock() {
         const busqueda = document.getElementById('busqueda').value.toLowerCase();
         const cat = document.getElementById('filtro-categoria').value;
-
         const filtrados = globalProductos.filter(p => {
             const coincideNombre = p.nombre.toLowerCase().includes(busqueda);
             const coincideCat = (cat === "Todo") || (p.marca === cat);
             return coincideNombre && coincideCat;
         });
-
         renderizarStock(filtrados);
     }
 
     function renderizarStock(lista) {
-        document.getElementById('contador-stock').innerText = `Viendo ${lista.length} de ${globalProductos.length} productos`;
-        
+        document.getElementById('contador-stock').innerText = `Viendo ${lista.length} de ${globalProductos.length} prendas`;
         const contenedor = document.getElementById('lista-productos');
-        if(lista.length === 0) {
-            contenedor.innerHTML = '<p style="text-align:center; color:#999;">No se encontraron productos.</p>';
-            return;
-        }
+        if(lista.length === 0) { contenedor.innerHTML = '<p style="text-align:center; color:#999;">No hay prendas.</p>'; return; }
 
         contenedor.innerHTML = lista.map(p => `
             <div class="prod-item">
                 <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
                 <div style="flex-grow:1; font-size:13px;">
                     <b>${p.nombre}</b><br>
-                    <small style="color:${p.link_origen ? 'green' : 'red'}">${p.link_origen ? '⚡ Conectado' : '⚠️ Manual'}</small>
-                    <br><small style="color:#888">${p.marca}</small>
+                    <span style="color:#d32f2f; font-weight:bold;">${p.categoria}</span><br>
+                    <small style="color:#888">${p.marca}</small>
                 </div>
-                <button onclick="prepararEdicion('${p.id}')">✏️</button>
-                <button onclick="eliminar('${p.id}')">🗑️</button>
+                <button onclick="prepararEdicion('${p.id}')" style="background:none;border:none;font-size:18px;cursor:pointer;">✏️</button>
+                <button onclick="eliminar('${p.id}')" style="background:none;border:none;font-size:18px;cursor:pointer;">🗑️</button>
             </div>`).join('');
-    }
-
-    // --- ACTUALIZADOR MASIVO ---
-    async function actualizarPreciosMasivo() {
-        const pctUsuario = parseFloat(document.getElementById('update_pct').value) || 80;
-        if(!confirm(`¿Actualizar precios usando ${pctUsuario}% de ganancia?`)) return;
-        
-        const msg = document.getElementById('update-msg');
-        msg.style.display = 'block';
-        msg.innerText = "Iniciando actualización...";
-        
-        const { data: prods } = await supabaseClient.from('productos').select('*').not('link_origen', 'is', null);
-        
-        let actualizados = 0;
-        for (let p of prods) {
-            try {
-                if(!p.link_origen.includes('http')) continue;
-                let cleanUrl = p.link_origen.split('?')[0];
-                if(!cleanUrl.endsWith('.json')) cleanUrl += '.json';
-
-                const response = await fetch(cleanUrl);
-                const jsonData = await response.json();
-                const nuevoCosto = parseFloat(jsonData.product.variants[0].price);
-                const multiplicador = 1 + (pctUsuario / 100);
-                const nuevoTotal = Math.round(nuevoCosto * multiplicador); 
-                const nuevoPrecioTexto = "$" + nuevoTotal.toLocaleString();
-
-                if(p.precio_costo !== nuevoCosto || p.categoria !== nuevoPrecioTexto) {
-                    await supabaseClient.from('productos').update({ precio_costo: nuevoCosto, categoria: nuevoPrecioTexto }).eq('id', p.id);
-                    actualizados++;
-                    msg.innerText = `Actualizando... (${actualizados})`;
-                }
-            } catch (e) { console.error(e); }
-        }
-        msg.innerText = `Fin! Actualizados: ${actualizados}.`;
-        setTimeout(() => location.reload(), 2000);
-    }
-
-    // --- IMPORTADOR ---
-    async function importarDeBlink() {
-        let url = document.getElementById('link_blink_input').value;
-        if (!url) return alert("Pegá un link primero");
-        document.getElementById('link_origen').value = url;
-
-        url = url.split('?')[0];
-        const jsonUrl = url + '.json';
-        document.getElementById('loading-msg').style.display = 'block';
-
-        try {
-            const response = await fetch(jsonUrl);
-            const data = await response.json();
-            const product = data.product;
-
-            document.getElementById('nombre').value = product.title;
-            if (product.image) document.getElementById('img_url').value = product.image.src;
-            if (product.images && product.images.length > 1) document.getElementById('links_fotos_extra').value = product.images.slice(1).map(i => i.src).join(', ');
-            if (product.variants) document.getElementById('costo').value = parseFloat(product.variants[0].price);
-            
-            if (product.options) {
-                product.options.forEach(opt => {
-                    if (opt.name.toLowerCase().includes('size') || opt.name.toLowerCase().includes('talle')) document.getElementById('talles').value = opt.values.join(', ');
-                    if (opt.name.toLowerCase().includes('color')) document.getElementById('colores').value = opt.values.join(', ');
-                });
-            }
-
-            let div = document.createElement("div");
-            div.innerHTML = product.body_html || "";
-            let texto = div.textContent || div.innerText || "";
-            if(texto.length > 300) texto = texto.substring(0, 300) + "...";
-            document.getElementById('tabla_talles_text').value = texto;
-
-            calcularVenta();
-            
-            const title = product.title.toLowerCase();
-            const cat = document.getElementById('categoria-prenda');
-            if(title.includes('short')) cat.value="Shorts & Polleras";
-            else if(title.includes('jean') || title.includes('pantalon')) cat.value="Pantalones";
-            else if(title.includes('camisa')) cat.value="Camisas";
-            else if(title.includes('remera') || title.includes('top')) cat.value="Remeras & Tops";
-            
-            alert("¡Datos traídos!");
-
-        } catch (error) { alert("Error: " + error.message); } 
-        finally { document.getElementById('loading-msg').style.display = 'none'; }
-    }
-
-    function switchTab(tab, el) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('sec-' + tab).classList.add('active');
-        el.classList.add('active');
-        if(tab === 'pedidos') cargarPedidos('NUEVO', 'lista-pedidos');
-        if(tab === 'historial') cargarPedidos('ARCHIVADO', 'lista-historial');
-        if(tab === 'carga') cargarLista();
-    }
-
-    function calcularVenta() {
-        const c = parseFloat(document.getElementById('costo').value) || 0;
-        const p = parseFloat(document.getElementById('porcentaje').value) || 0;
-        const total = Math.round(c * (1 + p/100));
-        document.getElementById('precio_venta').value = "$" + total.toLocaleString(); 
-        document.getElementById('precio_final').innerText = "$" + total.toLocaleString();
     }
 
     async function guardarProducto() {
         const id = document.getElementById('edit-id').value;
-        if(!document.getElementById('precio_venta').value) calcularVenta();
+        const precioNum = parseFloat(document.getElementById('precio_final').value) || 0;
+        const precioTexto = "$" + precioNum.toLocaleString('es-AR');
 
         const datos = {
             nombre: document.getElementById('nombre').value,
-            precio_costo: parseFloat(document.getElementById('costo').value) || 0,
-            categoria: document.getElementById('precio_venta').value,
+            precio_costo: precioNum, 
+            categoria: precioTexto, // Usamos esto para guardar el precio formateado (compatibilidad)
             imagen_url: document.getElementById('img_url').value,
             descripcion: document.getElementById('talles').value,
             marca_detalle: document.getElementById('colores').value,
             tabla_talles: document.getElementById('tabla_talles_text').value,
-            fotos_extra: document.getElementById('links_fotos_extra').value,
+            fotos_extra: "", 
             marca: document.getElementById('categoria-prenda').value,
-            link_origen: document.getElementById('link_origen').value
+            link_origen: "" 
         };
+
+        if(!datos.nombre || precioNum === 0) return alert("Por favor ingresá un nombre y un precio.");
 
         const { error } = id ? await supabaseClient.from('productos').update(datos).eq('id', id) : await supabaseClient.from('productos').insert([datos]);
         if(error) alert(error.message); else location.reload();
@@ -277,7 +151,7 @@
     async function cargarLista() {
         const { data } = await supabaseClient.from('productos').select('*').order('created_at', {ascending: false});
         globalProductos = data || [];
-        filtrarStock(); // Llamamos al filtro para que renderice
+        filtrarStock(); 
     }
 
     function prepararEdicion(id) {
@@ -289,14 +163,11 @@
         document.getElementById('talles').value = p.descripcion;
         document.getElementById('colores').value = p.marca_detalle;
         document.getElementById('img_url').value = p.imagen_url;
-        document.getElementById('links_fotos_extra').value = p.fotos_extra || '';
         document.getElementById('tabla_talles_text').value = p.tabla_talles || '';
-        document.getElementById('costo').value = p.precio_costo;
-        document.getElementById('link_origen').value = p.link_origen || '';
-        document.getElementById('precio_venta').value = p.categoria;
-        document.getElementById('precio_final').innerText = p.categoria;
-        document.getElementById('form-title').innerText = "Editando...";
-        document.getElementById('btn-action').innerText = "Actualizar";
+        document.getElementById('precio_final').value = p.precio_costo || 0;
+        
+        document.getElementById('form-title').innerText = "Editando Prenda";
+        document.getElementById('btn-action').innerText = "Actualizar Prenda";
         document.getElementById('btn-cancel').style.display = "block";
         window.scrollTo(0,0);
     }
@@ -312,13 +183,24 @@
                 <b>👤 ${p.cliente}</b>
                 <p style="font-size:12px;">${p.detalles.replace(/\n/g, '<br>')}</p>
                 <div class="fotos-pedido">${htmlFotos}</div>
-                ${estado==='NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px;">✅ Archivar</button>` : ''}
+                ${estado==='NUEVO' ? `<button onclick="cambiarEstado('${p.id}', 'ARCHIVADO')" style="width:100%; margin-top:10px; cursor:pointer; padding:8px; background:#e0e0e0; border:none; border-radius:5px;">✅ Archivar / Entregado</button>` : ''}
             </div>`;
-        }).join('') || '<p>No hay registros</p>';
+        }).join('') || '<p style="text-align:center; color:#999;">No hay pedidos</p>';
     }
 
     async function cambiarEstado(id, est) { await supabaseClient.from('pedidos').update({estado:est}).eq('id',id); switchTab('pedidos', document.querySelectorAll('.tab-btn')[1]); }
-    async function eliminar(id) { if(confirm("¿Borrar?")) await supabaseClient.from('productos').delete().eq('id',id); cargarLista(); }
+    async function eliminar(id) { if(confirm("¿Seguro que querés borrar esta prenda?")) { await supabaseClient.from('productos').delete().eq('id',id); cargarLista(); } }
+    
+    function switchTab(tab, el) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('sec-' + tab).classList.add('active');
+        el.classList.add('active');
+        if(tab === 'pedidos') cargarPedidos('NUEVO', 'lista-pedidos');
+        if(tab === 'historial') cargarPedidos('ARCHIVADO', 'lista-historial');
+        if(tab === 'carga') cargarLista();
+    }
+    
     cargarLista();
 </script>
 </body>
