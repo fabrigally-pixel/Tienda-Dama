@@ -11,36 +11,38 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
-            --accent: #d32f2f; /* Rojo/Fucsia oscuro del nuevo logo */
-            --bg: #fff0f5;     /* Rosado muy clarito de fondo */
+            --accent: #cc112c; /* Rojo oscuro sacado del texto de tu nuevo logo */
+            --bg: #ff9ec1;     /* Rosa de fondo basado en tu nuevo logo */
+            --bg-light: #fff0f5; /* Rosa muy clarito para el fondo general */
             --text: #444; 
             --green: #25d366; 
             --card-bg: #ffffff;
         }
         
-        body { font-family: 'Nunito', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 100px; display: flex; flex-direction: column; min-height: 100vh;}
+        body { font-family: 'Nunito', sans-serif; margin: 0; background: var(--bg-light); color: var(--text); padding-bottom: 100px; display: flex; flex-direction: column; min-height: 100vh;}
         
-        header { background: white; padding: 30px 20px 20px 20px; text-align: center; border-bottom: 2px solid #ffd1dc; box-shadow: 0 4px 15px rgba(211, 47, 47, 0.05); }
+        header { background: var(--bg); padding: 20px; text-align: center; border-bottom: 3px solid #ff7da8; box-shadow: 0 4px 15px rgba(204, 17, 44, 0.15); }
         
         /* Logo Nuevo */
         .logo-main { 
-            width: 250px; 
-            max-width: 90%;
+            width: 350px; 
+            max-width: 95%;
             height: auto;
             display: block; 
-            margin: 0 auto; 
+            margin: 0 auto;
+            border-radius: 10px;
         }
 
         /* Barra de Categorías */
         .category-bar { display: flex; gap: 10px; overflow-x: auto; padding: 15px 20px; background: white; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #ffe4e1; scrollbar-width: none; justify-content: flex-start; }
         .cat-btn { padding: 10px 22px; background: #fff5f7; border: 1.5px solid #ffb6c1; color: var(--accent); border-radius: 50px; white-space: nowrap; cursor: pointer; font-family: 'Fredoka', sans-serif; font-size: 14px; transition: 0.3s; }
-        .cat-btn:hover, .cat-btn.active { background: var(--accent); color: white; border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(211, 47, 47, 0.2); }
+        .cat-btn:hover, .cat-btn.active { background: var(--accent); color: white; border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(204, 17, 44, 0.2); }
 
         /* Contenedor */
         .container { max-width: 1200px; margin: 25px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; flex-grow: 1; }
         
         /* Tarjeta de Producto */
-        .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 25px rgba(211, 47, 47, 0.08); border: 2px solid white; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 25px rgba(204, 17, 44, 0.08); border: 2px solid white; display: flex; flex-direction: column; transition: transform 0.3s ease; }
         .product-card:hover { transform: translateY(-5px); border-color: #ffb6c1; }
         
         .img-container { width: 100%; height: 380px; background: #fff; position: relative; overflow: hidden; cursor: zoom-in; }
@@ -59,14 +61,14 @@
         select:focus { border-color: var(--accent); }
         
         .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 12px; cursor: pointer; font-weight: 700; margin-top: 10px; font-family: 'Fredoka', sans-serif; letter-spacing: 1px; transition: 0.3s; font-size: 15px; }
-        .btn-add:hover { background: #b71c1c; box-shadow: 0 6px 15px rgba(211, 47, 47, 0.3); }
+        .btn-add:hover { background: #9e0d22; box-shadow: 0 6px 15px rgba(204, 17, 44, 0.3); }
         
         /* Footer / Contacto */
         footer { background: white; padding: 30px 20px; text-align: center; border-top: 2px solid #ffd1dc; margin-top: 40px; }
         .social-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
         .social-btn { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--accent); font-weight: 700; padding: 12px 25px; border-radius: 50px; background: #fff5f7; border: 1.5px solid #ffb6c1; transition: 0.3s; font-family: 'Fredoka', sans-serif; }
-        .social-btn:hover { background: var(--accent); color: white; border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(211, 47, 47, 0.2); }
-        .locations { color: #666; font-size: 14px; font-weight: 700; background: #fff5f7; display: inline-block; padding: 10px 20px; border-radius: 10px; }
+        .social-btn:hover { background: var(--accent); color: white; border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(204, 17, 44, 0.2); }
+        .locations { color: #666; font-size: 14px; font-weight: 700; background: #fff5f7; display: inline-block; padding: 10px 20px; border-radius: 10px; border: 1px solid #ffe4e1; }
         
         /* Carrito */
         .cart-float { position: fixed; bottom: 30px; right: 30px; background: var(--green); color: white; padding: 18px 30px; border-radius: 50px; cursor: pointer; display: none; z-index: 100; font-weight: 700; border: none; box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4); font-family: 'Nunito', sans-serif; font-size: 16px; transition: transform 0.2s; }
@@ -74,7 +76,7 @@
         
         /* Modales */
         .modal { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(255,240,245,0.9); z-index: 200; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
-        .modal-content { background: white; padding: 35px; border-radius: 25px; width: 100%; max-width: 420px; box-shadow: 0 20px 50px rgba(211,47,47,0.15); border: 2px solid #ffe4e1; }
+        .modal-content { background: white; padding: 35px; border-radius: 25px; width: 100%; max-width: 420px; box-shadow: 0 20px 50px rgba(204,17,44,0.15); border: 2px solid #ffe4e1; }
 
         #zoom-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index: 1000; justify-content:center; align-items:center; cursor: zoom-out; }
         #zoom-overlay img { max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 10px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
@@ -83,8 +85,8 @@
 <body>
 
 <header>
-    <!-- LOGO NUEVO: Acordate de subir la foto a postimages y pegar el link acá! -->
-    <img src="https://via.placeholder.com/600x250/ff99cc/cc0000?text=PEGAR+LINK+DEL+LOGO+AQUI" class="logo-main" alt="Úrsula Indumentaria">
+    <!-- LOGO NUEVO CARGADO -->
+    <img src="https://i.postimg.cc/JzZZtLGD/IMG.jpg" class="logo-main" alt="Úrsula Indumentaria">
 </header>
 
 <div class="category-bar" id="category-bar"></div>
@@ -93,14 +95,14 @@
     <p style="text-align: center; grid-column: 1/-1; padding: 50px; color: #a0a0a0; font-size: 1.1em;">Preparando la colección...</p>
 </div>
 
-<!-- FOOTER CON REDES Y UBICACIÓN -->
+<!-- FOOTER CON REDES, WHATSAPP Y UBICACIÓN -->
 <footer>
     <div class="social-links">
         <a href="https://instagram.com/ursula.indumentariaa" target="_blank" class="social-btn">
             📸 @ursula.indumentariaa
         </a>
         <a href="https://wa.me/5493775461122" target="_blank" class="social-btn">
-            💬 Consultas por WhatsApp
+            💬 3775-461122
         </a>
     </div>
     <div class="locations">
