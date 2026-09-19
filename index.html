@@ -22,18 +22,18 @@
         
         body { font-family: 'Nunito', sans-serif; margin: 0; background: var(--bg-light); color: var(--text); padding-bottom: 100px; display: flex; flex-direction: column; min-height: 100vh;}
         
-        /* Encabezado: Le cambiamos el color de la línea de abajo al rojo de las letras (--accent) */
+        /* Encabezado */
         header { 
             padding: 0; 
             margin: 0; 
             background: var(--bg-light); 
-            border-bottom: 4px solid var(--accent); /* <--- ACÁ ESTÁ EL CAMBIO A ROJO */
+            border-bottom: 4px solid var(--accent); 
             box-shadow: 0 4px 15px rgba(204, 17, 44, 0.15); 
             line-height: 0; 
             font-size: 0; 
         }
         
-        /* Logo Nuevo: Estilo Banner que se adapta 100% sin recortar (En compu queda igual) */
+        /* Logo Nuevo */
         .logo-main { 
             width: 100%; 
             height: auto; 
@@ -57,9 +57,18 @@
         .product-card { background: var(--card-bg); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 25px rgba(204, 17, 44, 0.08); border: 2px solid white; display: flex; flex-direction: column; transition: transform 0.3s ease; }
         .product-card:hover { transform: translateY(-5px); border-color: #ffb6c1; }
         
-        .img-container { width: 100%; height: 380px; background: #fff; position: relative; overflow: hidden; cursor: zoom-in; }
-        .main-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-        .product-card:hover .main-img { transform: scale(1.05); }
+        /* Estilos del Carrusel de Imágenes */
+        .img-container { width: 100%; height: 380px; background: #fff; position: relative; overflow: hidden; }
+        .main-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; cursor: zoom-in; }
+        
+        /* Flechas del carrusel */
+        .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.8); border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.3s; z-index: 10; }
+        .carousel-btn:hover { background: var(--accent); color: white; }
+        .carousel-btn.prev { left: 10px; }
+        .carousel-btn.next { right: 10px; }
+        .carousel-dots { position: absolute; bottom: 10px; width: 100%; display: flex; justify-content: center; gap: 5px; z-index: 10; pointer-events: none;}
+        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.5); border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); }
+        .dot.active { background: var(--accent); border-color: white;}
 
         .info { padding: 25px; flex-grow: 1; display:flex; flex-direction:column; justify-content:space-between; }
         .price { font-size: 26px; font-weight: 700; color: var(--accent); font-family: 'Fredoka', sans-serif; margin-bottom: 8px; }
@@ -69,10 +78,15 @@
 
         .selector-group { margin-bottom: 20px; }
         label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; display: block; margin-top: 10px; letter-spacing: 0.5px;}
-        select { width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid #ffb6c1; background: #fffcfd; font-family: 'Nunito', sans-serif; font-size: 15px; color: #444; outline: none; font-weight: 600; }
-        select:focus { border-color: var(--accent); }
+        select, input[type="number"].qty-input { width: 100%; padding: 12px; border-radius: 8px; border: 1.5px solid #ffb6c1; background: #fffcfd; font-family: 'Nunito', sans-serif; font-size: 15px; color: #444; outline: none; font-weight: 600; box-sizing: border-box; margin-top: 5px;}
+        select:focus, input[type="number"].qty-input:focus { border-color: var(--accent); }
         
-        .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 12px; cursor: pointer; font-weight: 700; margin-top: 10px; font-family: 'Fredoka', sans-serif; letter-spacing: 1px; transition: 0.3s; font-size: 15px; }
+        /* Contenedor Flex para Talle, Color y Cantidad para que queden alineados */
+        .options-flex { display: flex; gap: 10px; }
+        .options-flex > div { flex: 1; }
+        .qty-box { flex: 0.5 !important; } /* La cantidad ocupa un poco menos de espacio */
+        
+        .btn-add { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 12px; cursor: pointer; font-weight: 700; margin-top: 15px; font-family: 'Fredoka', sans-serif; letter-spacing: 1px; transition: 0.3s; font-size: 15px; }
         .btn-add:hover { background: #9e0d22; box-shadow: 0 6px 15px rgba(204, 17, 44, 0.3); }
         
         /* Footer / Contacto */
@@ -93,9 +107,8 @@
         #zoom-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index: 1000; justify-content:center; align-items:center; cursor: zoom-out; }
         #zoom-overlay img { max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 10px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
 
-        /* Ajustes específicos para el celular */
+        /* Ajustes celulares */
         @media (max-width: 600px) {
-            /* Forzamos a que el banner sea más alto en el celular para que haga "zoom" al texto del medio */
             .logo-main { height: 200px; }
             .container { grid-template-columns: 1fr; gap: 25px; }
             .img-container { height: 350px; }
@@ -107,7 +120,6 @@
 <body>
 
 <header>
-    <!-- Tu nuevo fondo alargado cargado -->
     <img src="https://i.postimg.cc/ryJCcc74/Bannertienda.png" class="logo-main" alt="Úrsula Indumentaria">
 </header>
 
@@ -162,6 +174,9 @@
     let productosAll = [];
     let carrito = [];
     const categoriasMenu = ["Todo", "Remeras & Tops", "Camisas", "Pantalones", "Sweaters & Buzos", "Blazers & Camperas", "Shorts & Polleras", "Monos & Vestidos", "Blusas"];
+    
+    // Objeto para guardar el índice de la foto actual de cada producto que tenga carrusel
+    let carruselIndices = {};
 
     async function cargarProductos() {
         const { data, error } = await supabaseClient.from('productos').select('*').order('created_at', {ascending: false});
@@ -186,15 +201,56 @@
         document.getElementById('zoom-overlay').style.display = 'flex';
     }
 
+    // Funciones para manejar el paso de imágenes en el carrusel
+    window.cambiarFoto = function(id, direccion, urlsStr) {
+        const urls = urlsStr.split(',').map(u => u.trim()).filter(u => u !== '');
+        if (urls.length <= 1) return;
+
+        if (carruselIndices[id] === undefined) carruselIndices[id] = 0;
+        
+        carruselIndices[id] += direccion;
+        
+        if (carruselIndices[id] >= urls.length) carruselIndices[id] = 0;
+        if (carruselIndices[id] < 0) carruselIndices[id] = urls.length - 1;
+
+        const imgElement = document.getElementById(`main-img-${id}`);
+        imgElement.src = urls[carruselIndices[id]];
+
+        // Actualizar puntitos
+        const dots = document.querySelectorAll(`#dots-${id} .dot`);
+        dots.forEach((dot, index) => {
+            if(index === carruselIndices[id]) dot.classList.add('active');
+            else dot.classList.remove('active');
+        });
+    };
+
     function renderizar(lista) {
         const contenedor = document.getElementById('catalogo');
         if(lista.length === 0) { contenedor.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#999; font-style:italic;">No hay prendas cargadas todavía.</p>'; return; }
         
         contenedor.innerHTML = lista.map(p => {
+            // Lógica para detectar si hay varias fotos separadas por coma
+            const fotosArray = p.imagen_url ? p.imagen_url.split(',').map(f => f.trim()).filter(f => f !== '') : [];
+            const primeraFoto = fotosArray.length > 0 ? fotosArray[0] : '';
+            const tieneCarrusel = fotosArray.length > 1;
+            carruselIndices[p.id] = 0; // Inicializar índice para este producto
+            const arraySeguro = p.imagen_url ? p.imagen_url.replace(/'/g, "\\'") : ''; // Escapar comillas simples para la función onClick
+
+            let controlesCarrusel = '';
+            if(tieneCarrusel) {
+                const puntitos = fotosArray.map((f, i) => `<div class="dot ${i===0?'active':''}"></div>`).join('');
+                controlesCarrusel = `
+                    <button class="carousel-btn prev" onclick="event.stopPropagation(); cambiarFoto('${p.id}', -1, '${arraySeguro}')">❮</button>
+                    <button class="carousel-btn next" onclick="event.stopPropagation(); cambiarFoto('${p.id}', 1, '${arraySeguro}')">❯</button>
+                    <div class="carousel-dots" id="dots-${p.id}">${puntitos}</div>
+                `;
+            }
+
             return `
             <div class="product-card">
-                <div class="img-container" onclick="abrirZoom('${p.imagen_url}')">
-                    <img src="${p.imagen_url}" class="main-img" id="main-img-${p.id}">
+                <div class="img-container">
+                    <img src="${primeraFoto}" class="main-img" id="main-img-${p.id}" onclick="abrirZoom(this.src)">
+                    ${controlesCarrusel}
                 </div>
 
                 <div class="info">
@@ -206,16 +262,27 @@
 
                     <div>
                         <div class="selector-group">
-                            <label>Talle:</label>
-                            <select id="talle-${p.id}">
-                                ${p.descripcion ? p.descripcion.split(',').map(t => `<option>${t.trim()}</option>`).join('') : '<option>Único</option>'}
-                            </select>
-                            <label>Color:</label>
-                            <select id="color-${p.id}">
-                                ${p.marca_detalle ? p.marca_detalle.split(',').map(c => `<option>${c.trim()}</option>`).join('') : '<option>Único</option>'}
-                            </select>
+                            <div class="options-flex">
+                                <div>
+                                    <label>Talle</label>
+                                    <select id="talle-${p.id}">
+                                        ${p.descripcion ? p.descripcion.split(',').map(t => `<option>${t.trim()}</option>`).join('') : '<option>Único</option>'}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Color</label>
+                                    <select id="color-${p.id}">
+                                        ${p.marca_detalle ? p.marca_detalle.split(',').map(c => `<option>${c.trim()}</option>`).join('') : '<option>Único</option>'}
+                                    </select>
+                                </div>
+                                <div class="qty-box">
+                                    <label>Cant.</label>
+                                    <input type="number" id="cant-${p.id}" class="qty-input" value="1" min="1" max="20">
+                                </div>
+                            </div>
                         </div>
-                        <button class="btn-add" onclick="agregarAlCarrito(event, '${p.id}', '${p.nombre}', '${p.categoria}', '${p.imagen_url}')">LO QUIERO 💖</button>
+                        <!-- Se pasa el string completo de imagenes por si cambian de foto antes de comprar, guardamos la principal -->
+                        <button class="btn-add" onclick="agregarAlCarrito(event, '${p.id}', '${p.nombre}', '${p.categoria}', '${primeraFoto}')">LO QUIERO 💖</button>
                     </div>
                 </div>
             </div>`;
@@ -225,10 +292,16 @@
     function agregarAlCarrito(event, id, nombre, precioVenta, foto) {
         const talle = document.getElementById(`talle-${id}`).value;
         const color = document.getElementById(`color-${id}`).value;
-        carrito.push({ nombre, precioVenta, talle, color, foto });
+        const cantidad = parseInt(document.getElementById(`cant-${id}`).value) || 1;
+        
+        // Agregar al carrito el objeto con la cantidad elegida
+        carrito.push({ nombre, precioVenta, talle, color, foto, cantidad });
         
         document.getElementById('cart-float').style.display = 'block';
-        document.getElementById('cart-count').innerText = carrito.length;
+        
+        // Actualizar contador del carrito (sumando cantidades)
+        const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+        document.getElementById('cart-count').innerText = totalItems;
         
         const btn = event.target;
         const originalText = btn.innerText;
@@ -237,6 +310,7 @@
         setTimeout(() => {
             btn.innerText = originalText;
             btn.style.background = "var(--accent)";
+            document.getElementById(`cant-${id}`).value = 1; // Resetear cantidad a 1 después de agregar
         }, 1500);
     }
 
@@ -250,7 +324,7 @@
                     <div style="display:flex; align-items:center; gap:12px;">
                         <img src="${i.foto}" style="width:55px; height:55px; object-fit:cover; border-radius:10px; border:1px solid #ffe4e1;">
                         <div style="line-height:1.3">
-                            <b style="font-size:14px; color:#333;">${i.nombre}</b><br>
+                            <b style="font-size:14px; color:#333;">${i.cantidad}x ${i.nombre}</b><br>
                             <small style="color:#777;">${i.talle} / ${i.color}</small>
                         </div>
                     </div>
@@ -265,7 +339,8 @@
 
     function eliminarDelCarrito(index) {
         carrito.splice(index, 1);
-        document.getElementById('cart-count').innerText = carrito.length;
+        const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+        document.getElementById('cart-count').innerText = totalItems;
         if(carrito.length === 0) document.getElementById('cart-float').style.display = 'none';
         abrirModal();
     }
@@ -281,15 +356,16 @@
         let linksFotos = carrito.map(i => i.foto).join(',');
 
         carrito.forEach((item) => {
-            textoWhatsApp += `👚 *${item.nombre}*\n   Talle: ${item.talle} | Color: ${item.color}\n   Precio: ${item.precioVenta}\n\n`;
+            textoWhatsApp += `👚 *${item.cantidad}x ${item.nombre}*\n   Talle: ${item.talle} | Color: ${item.color}\n   Precio U.: ${item.precioVenta}\n\n`;
         });
         
-        textoWhatsApp += `Total de prendas: ${carrito.length}`;
+        const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+        textoWhatsApp += `Total de prendas: ${totalItems}`;
 
         const { error } = await supabaseClient.from('pedidos').insert([{ 
             cliente, 
             detalles: textoWhatsApp, 
-            total: carrito.length + " items", 
+            total: totalItems + " items", 
             estado: "NUEVO", 
             fotos_pedido: linksFotos 
         }]);
