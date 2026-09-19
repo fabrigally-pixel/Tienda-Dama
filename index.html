@@ -22,22 +22,22 @@
         
         body { font-family: 'Nunito', sans-serif; margin: 0; background: var(--bg-light); color: var(--text); padding-bottom: 100px; display: flex; flex-direction: column; min-height: 100vh;}
         
-        /* Encabezado sin márgenes para que la imagen sea un banner de punta a punta */
+        /* Encabezado: Le cambiamos el color de la línea de abajo al rojo de las letras (--accent) */
         header { 
             padding: 0; 
             margin: 0; 
             background: var(--bg-light); 
-            border-bottom: 3px solid #ff7da8; 
+            border-bottom: 4px solid var(--accent); /* <--- ACÁ ESTÁ EL CAMBIO A ROJO */
             box-shadow: 0 4px 15px rgba(204, 17, 44, 0.15); 
             line-height: 0; 
             font-size: 0; 
         }
         
-        /* Logo Nuevo: Estilo Banner que se adapta 100% sin recortar */
+        /* Logo Nuevo: Estilo Banner que se adapta 100% sin recortar (En compu queda igual) */
         .logo-main { 
             width: 100%; 
-            height: auto; /* Permite que la imagen crezca a lo alto de forma natural según el ancho */
-            max-height: 450px; /* Un tope de seguridad para pantallas gigantes */
+            height: auto; 
+            max-height: 450px; 
             object-fit: cover; 
             object-position: center; 
             display: block; 
@@ -95,8 +95,8 @@
 
         /* Ajustes específicos para el celular */
         @media (max-width: 600px) {
-            /* En móvil le damos un mínimo de alto para que no quede demasiado chatita la foto */
-            .logo-main { min-height: 120px; }
+            /* Forzamos a que el banner sea más alto en el celular para que haga "zoom" al texto del medio */
+            .logo-main { height: 200px; }
             .container { grid-template-columns: 1fr; gap: 25px; }
             .img-container { height: 350px; }
             .social-btn { width: 100%; justify-content: center; }
