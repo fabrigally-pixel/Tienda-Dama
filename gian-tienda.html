@@ -52,15 +52,15 @@
         <label>Precio de Venta ($)</label>
         <input type="number" id="precio_final" placeholder="Ej: 15000">
 
-        <label>Enlace de la Foto Principal</label>
-        <span class="help-text">Subí tu foto a postimages.org y pegá acá el "Enlace directo"</span>
-        <input type="text" id="img_url" placeholder="https://i.postimg.cc/...">
+        <label>Enlaces de las Fotos</label>
+        <span class="help-text">Pegá acá el "Enlace directo" de postimages.org. <b>Si tenés varias fotos, separalas con una coma (,).</b></span>
+        <textarea id="img_url" rows="3" placeholder="https://i.postimg.cc/foto1.jpg, https://i.postimg.cc/foto2.jpg"></textarea>
 
         <label>Talles Disponibles</label>
         <input type="text" id="talles" placeholder="Ej: S, M, L (Separados por coma)">
         
         <label>Colores</label>
-        <input type="text" id="colores" placeholder="Ej: Blanco, Negro, Rojo">
+        <input type="text" id="colores" placeholder="Ej: Blanco, Negro, Rojo (Separados por coma)">
         
         <label>Descripción Extra / Info de Talles</label>
         <textarea id="tabla_talles_text" placeholder="Medidas o detalles de la tela..."></textarea>
@@ -111,9 +111,12 @@
         const contenedor = document.getElementById('lista-productos');
         if(lista.length === 0) { contenedor.innerHTML = '<p style="text-align:center; color:#999;">No hay prendas.</p>'; return; }
 
-        contenedor.innerHTML = lista.map(p => `
+        contenedor.innerHTML = lista.map(p => {
+            // Extraer la primera foto de la lista de enlaces
+            const primeraFoto = p.imagen_url ? p.imagen_url.split(',')[0].trim() : '';
+            return `
             <div class="prod-item">
-                <img src="${p.imagen_url}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
+                <img src="${primeraFoto}" width="40" height="40" style="object-fit:cover; border-radius:5px;">
                 <div style="flex-grow:1; font-size:13px;">
                     <b>${p.nombre}</b><br>
                     <span style="color:#cc112c; font-weight:bold;">${p.categoria}</span><br>
@@ -121,7 +124,8 @@
                 </div>
                 <button onclick="prepararEdicion('${p.id}')" style="background:none;border:none;font-size:18px;cursor:pointer;">✏️</button>
                 <button onclick="eliminar('${p.id}')" style="background:none;border:none;font-size:18px;cursor:pointer;">🗑️</button>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     async function guardarProducto() {
@@ -132,8 +136,8 @@
         const datos = {
             nombre: document.getElementById('nombre').value,
             precio_costo: precioNum, 
-            categoria: precioTexto, // Usamos esto para guardar el precio formateado (compatibilidad)
-            imagen_url: document.getElementById('img_url').value,
+            categoria: precioTexto, // Guardamos el precio formateado acá
+            imagen_url: document.getElementById('img_url').value, // Ahora puede contener varios enlaces separados por coma
             descripcion: document.getElementById('talles').value,
             marca_detalle: document.getElementById('colores').value,
             tabla_talles: document.getElementById('tabla_talles_text').value,
